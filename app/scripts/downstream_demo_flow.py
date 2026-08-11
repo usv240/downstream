@@ -95,6 +95,11 @@ def main() -> int:
     check("resume retains all five facts", len(workspace["answers"]) == 5)
     check("context does not grow with empty sessions", workspace["context_meter"]["structured_context_tokens"] == before)
 
+    bonus = api.call("GET", "/downstream/bonus")
+    check(
+        "recorded Gemma privacy layer leaks no returned identifier",
+        bonus["identifiers_leaked_in_replay"] == [] and bonus["measured"]["recall"] == {"found": 4, "expected": 4},
+    )
     proof = api.call("GET", "/downstream/proof")
     check("executable safety proof is all green", proof["passed"] == proof["total"])
     schema = api.call("GET", "/openapi.json")

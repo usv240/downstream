@@ -17,6 +17,8 @@ not know what that means**, inspect the changed reading profile and context mete
 
 - Real Gemini 3.5 Flash multimodal extraction from a synthetic 1958-style drawing, recorded and
   graded 5/5 against adjacent truth.
+- Gemma 4 MaaS reviews synthetic owner notes for remaining name spans, recorded at 4/4 recall,
+  0 false positives, and 0 identifiers surviving the replay gate.
 - A durable Firestore workspace that preserves facts, sessions, preferences, progress, and draft
   sections across visits.
 - One question at a time, with no repeats and a visible reason for each question.
@@ -100,7 +102,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 166 tests, accessibility green in both themes, and 19/19 demo checks.
+Current verified result: 171 tests, accessibility green in both themes, and 20/20 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:

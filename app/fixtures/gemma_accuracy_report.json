@@ -1,0 +1,12 @@
+{
+  "model": "gemma-4-26b-a4b-it-maas",
+  "location": "global",
+  "project": "agentic-fleet-2026",
+  "recall": {
+    "found": 4,
+    "expected": 4
+  },
+  "false_positives": 0,
+  "identifiers_leaked": 0,
+  "synthetic_fixtures": true
+}

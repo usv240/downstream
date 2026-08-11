@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from downstream.bonus import gemma_redaction_proof
 from downstream.partner import (
     REQUIREMENTS,
     create_workspace,
@@ -74,6 +75,11 @@ def build_router(store: WorkspaceStore) -> APIRouter:
     @router.get("/fixtures/drawing/image")
     def drawing_fixture_image() -> FileResponse:
         return FileResponse(FIXTURES / "cedar_hollow_drawing.png", media_type="image/png")
+
+    @router.get("/bonus")
+    def bonus() -> dict[str, Any]:
+        return gemma_redaction_proof()
+
     @router.get("/research")
     def research() -> dict[str, Any]:
         return {
