@@ -20,7 +20,7 @@ insufficient.
    whose quotes occur in that transcription.
 4. Surface the drawing and registry height conflict instead of silently merging it.
 5. Create a durable Firestore workspace.
-6. Ask five owner questions one at a time and never repeat a resolved question.
+6. Ask five owner questions one at a time, then create a sixth targeted clarification when retrieved sources conflict.
 7. Capture unknown terms, accept, edit, skip, and not-right feedback in an inspectable profile.
 8. Compose plan sections from structured facts and source-bearing requirements.
 9. Refuse to render an inundation boundary because applicability, jurisdiction, and reference-map
@@ -29,8 +29,8 @@ insufficient.
 
 ## Acceptance gates
 
-- 171 tests green.
-- 20/20 executable demo checks green.
+- 185 tests green.
+- 24/24 executable demo checks green.
 - WCAG 2.2 AA token checks green in light and dark themes.
 - Gemini drawing record graded 5/5 against adjacent synthetic truth.
 - No endpoint can approve, certify, submit, or order evacuation.

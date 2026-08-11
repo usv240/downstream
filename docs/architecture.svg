@@ -1,8 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="620" viewBox="0 0 1400 620" role="img" aria-labelledby="title desc">
-  <title id="title">Downstream architecture</title><desc id="desc">USACE data, a synthetic drawing, and owner sessions become provenance-bearing facts in Firestore. A composer, verifier, and fail-closed mapping gate produce a reviewable draft in Cloud Run.</desc>
-  <rect width="1400" height="620" fill="#f7f9fc"/><g font-family="Segoe UI,Arial,sans-serif" fill="#102033">
-  <text x="70" y="65" font-size="30" font-weight="700">Downstream architecture</text><text x="70" y="96" font-size="16" fill="#526174">A stateful partner with evidence and authority boundaries</text>
-  <g stroke="#d7e0eb" stroke-width="2" fill="#fff"><rect x="70" y="145" rx="16" width="240" height="100"/><rect x="70" y="330" rx="16" width="240" height="100"/><rect x="390" y="145" rx="16" width="250" height="100"/><rect x="390" y="330" rx="16" width="250" height="100"/><rect x="720" y="220" rx="16" width="250" height="125" fill="#e5f3ed" stroke="#116149"/><rect x="1050" y="145" rx="16" width="270" height="100"/><rect x="1050" y="330" rx="16" width="270" height="100"/><rect x="720" y="460" rx="16" width="250" height="100" fill="#fdecec" stroke="#a33131"/></g>
-  <g font-size="16" text-anchor="middle"><text x="190" y="186" font-weight="700">USACE NID</text><text x="190" y="214" fill="#526174">live, read-only public fields</text><text x="190" y="371" font-weight="700">Synthetic drawing</text><text x="190" y="399" fill="#526174">Gemini 3.5, graded 5/5</text><text x="515" y="186" font-weight="700">Registry and quote gate</text><text x="515" y="214" fill="#526174">provenance before use</text><text x="515" y="371" font-weight="700">Owner partner loop</text><text x="515" y="399" fill="#526174">ask, remember, adapt</text><text x="845" y="263" font-weight="700">Firestore workspace</text><text x="845" y="292" fill="#526174">facts, profile, sessions,</text><text x="845" y="317" fill="#526174">sections, mapping decision</text><text x="1185" y="186" font-weight="700">Composer and Verifier</text><text x="1185" y="214" fill="#526174">contained citations only</text><text x="1185" y="371" font-weight="700">Cloud Run product</text><text x="1185" y="399" fill="#526174">accessible reviewable draft</text><text x="845" y="501" font-weight="700">Mapping safe stop</text><text x="845" y="529" fill="#526174">flow path only, no extent</text></g>
-  <g stroke="#116149" stroke-width="3" fill="none" marker-end="url(#arrow)"><path d="M310 195 H390"/><path d="M310 380 H390"/><path d="M640 195 C690 195 680 252 720 252"/><path d="M640 380 C690 380 680 314 720 314"/><path d="M970 252 C1015 252 1000 195 1050 195"/><path d="M1185 245 V330"/><path d="M845 345 V460"/><path d="M970 510 C1020 510 1000 410 1050 410"/></g><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#116149"/></marker></defs>
-  </g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
+  <title id="title">Downstream adaptive collaboration architecture</title>
+  <desc id="desc">USACE data and Gemini drawing extraction become provenance-bearing facts. Conflicts create targeted owner questions. Firestore preserves bounded memory and versioned corrections. A verifier and mapping safety gate produce a section evidence ledger and reviewable draft on Cloud Run.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#116149"/></marker>
+    <style>.box{fill:#fff;stroke:#d7e0eb;stroke-width:2}.accent{fill:#e5f3ed;stroke:#116149}.stop{fill:#fdecec;stroke:#a33131}.title{font:700 18px 'Segoe UI',Arial,sans-serif;fill:#102033}.sub{font:15px 'Segoe UI',Arial,sans-serif;fill:#526174}.line{fill:none;stroke:#116149;stroke-width:3;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1500" height="760" fill="#f7f9fc"/>
+  <text x="70" y="58" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="700" fill="#102033">Downstream architecture</text>
+  <text x="70" y="89" class="sub">A persistent partner whose questions, corrections, and rendered sections remain attributable</text>
+
+  <g>
+    <rect class="box" x="55" y="145" rx="16" width="245" height="95"/>
+    <text class="title" x="177" y="184" text-anchor="middle">USACE NID</text><text class="sub" x="177" y="212" text-anchor="middle">live, read-only fields</text>
+    <rect class="box" x="55" y="315" rx="16" width="245" height="105"/>
+    <text class="title" x="177" y="354" text-anchor="middle">Synthetic drawing</text><text class="sub" x="177" y="382" text-anchor="middle">Gemini 3.5, graded 5/5</text>
+
+    <rect class="box" x="360" y="215" rx="16" width="255" height="125"/>
+    <text class="title" x="487" y="257" text-anchor="middle">Provenance gates</text><text class="sub" x="487" y="286" text-anchor="middle">registry status, transcription,</text><text class="sub" x="487" y="310" text-anchor="middle">nonempty quote containment</text>
+
+    <rect class="accent" x="685" y="145" rx="16" width="255" height="115"/>
+    <text class="title" x="812" y="185" text-anchor="middle">Conflict policy</text><text class="sub" x="812" y="214" text-anchor="middle">retrieved facts disagree,</text><text class="sub" x="812" y="238" text-anchor="middle">create a targeted question</text>
+    <rect class="box" x="685" y="330" rx="16" width="255" height="115"/>
+    <text class="title" x="812" y="370" text-anchor="middle">Owner partner loop</text><text class="sub" x="812" y="399" text-anchor="middle">ask, simplify, correct,</text><text class="sub" x="812" y="423" text-anchor="middle">retain qualified boundaries</text>
+
+    <rect class="accent" x="1010" y="225" rx="16" width="260" height="135"/>
+    <text class="title" x="1140" y="266" text-anchor="middle">Firestore workspace</text><text class="sub" x="1140" y="295" text-anchor="middle">facts, profile, sessions,</text><text class="sub" x="1140" y="319" text-anchor="middle">versioned answer history,</text><text class="sub" x="1140" y="343" text-anchor="middle">bounded structured memory</text>
+
+    <rect class="box" x="1010" y="455" rx="16" width="260" height="115"/>
+    <text class="title" x="1140" y="495" text-anchor="middle">Composer and Verifier</text><text class="sub" x="1140" y="524" text-anchor="middle">section evidence ledger</text><text class="sub" x="1140" y="548" text-anchor="middle">with contained citations</text>
+    <rect class="stop" x="685" y="520" rx="16" width="255" height="105"/>
+    <text class="title" x="812" y="560" text-anchor="middle">Mapping safe stop</text><text class="sub" x="812" y="589" text-anchor="middle">flow path only, no extent</text>
+
+    <rect class="box" x="1330" y="350" rx="16" width="145" height="130"/>
+    <text class="title" x="1402" y="390" text-anchor="middle">Cloud Run</text><text class="sub" x="1402" y="419" text-anchor="middle">reviewable</text><text class="sub" x="1402" y="443" text-anchor="middle">draft and</text><text class="sub" x="1402" y="467" text-anchor="middle">public audit</text>
+  </g>
+
+  <g>
+    <path class="line" d="M300 193 C330 193 330 255 360 255"/><path class="line" d="M300 367 C330 367 330 300 360 300"/>
+    <path class="line" d="M615 255 C650 255 650 203 685 203"/><path class="line" d="M812 260 V330"/>
+    <path class="line" d="M940 387 C975 387 975 318 1010 318"/><path class="line" d="M1140 360 V455"/>
+    <path class="line" d="M940 572 H1010"/><path class="line" d="M1270 512 C1305 512 1300 430 1330 430"/>
+    <path class="line" d="M1330 380 C1285 380 1300 285 1270 285"/>
+  </g>
+  <text class="sub" x="1310" y="334" text-anchor="middle">owner correction</text>
+</svg>

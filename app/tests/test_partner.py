@@ -30,13 +30,15 @@ def test_drawing_facts_keep_quotes_and_conflicts():
 def test_questions_are_one_at_a_time_and_not_repeated():
     workspace = create_workspace()
     seen = []
-    for _ in QUESTION_BANK:
+    for _ in range(len(QUESTION_BANK) + 1):
         question = next_question(workspace)
         assert question["id"] not in seen
         seen.append(question["id"])
         record_answer(workspace, question["id"], f"Answer for {question['id']}")
     assert next_question(workspace) is None
-    assert seen == [question["id"] for question in QUESTION_BANK]
+    assert seen == [question["id"] for question in QUESTION_BANK] + [
+        "resolve_dam_height_conflict"
+    ]
 
 
 def test_known_registry_and_drawing_facts_are_not_asked():
@@ -49,7 +51,9 @@ def test_known_registry_and_drawing_facts_are_not_asked():
 def test_unknown_term_changes_later_language():
     workspace = create_workspace()
     first = next_question(workspace)
-    record_answer(workspace, first["id"], "The gravel lane washes out", did_not_understand=True)
+    record_answer(
+        workspace, first["id"], "The gravel lane washes out", did_not_understand=True
+    )
     assert workspace["profile"]["reading_level"] == "plain"
     assert first["term"] in workspace["profile"]["unfamiliar_terms"]
     assert next_question(workspace)["text"] == next_question(workspace)["plain"]
@@ -106,7 +110,10 @@ def test_resume_keeps_facts_and_context_bounded():
     after = context_meter(workspace)
     assert after["structured_context_tokens"] == before["structured_context_tokens"]
     assert after["within_bound"] is True
-    assert after["estimated_transcript_replay_tokens"] > before["estimated_transcript_replay_tokens"]
+    assert (
+        after["estimated_transcript_replay_tokens"]
+        > before["estimated_transcript_replay_tokens"]
+    )
 
 
 def test_plan_changes_from_owner_fact_not_chat_prose():
@@ -129,4 +136,4 @@ def test_public_view_adds_question_meter_and_progress_without_mutating_store():
     assert "next_question" not in workspace
     assert view["next_question"]["id"] == "access_heavy_rain"
     assert view["context_meter"]["within_bound"] is True
-    assert view["progress"] == {"answered": 0, "skipped": 0, "total": 5}
+    assert view["progress"] == {"answered": 0, "skipped": 0, "total": 6}

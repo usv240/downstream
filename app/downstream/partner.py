@@ -6,6 +6,13 @@ import copy
 import re
 import uuid
 from datetime import datetime, timezone
+from downstream.collaboration import (
+    adaptation_snapshot,
+    evidence_ledger,
+    mark_conflict_response,
+    questions_for,
+    revise_owner_answer,
+)
 from typing import Any
 
 from downstream.safety import DRAFT_DISCLOSURE, mapping_gate
@@ -151,17 +158,23 @@ def create_workspace() -> dict[str, Any]:
 
 def next_question(workspace: dict[str, Any]) -> dict[str, Any] | None:
     resolved = set(workspace["answers"]) | set(workspace["skipped"])
-    question = next((q for q in QUESTION_BANK if q["id"] not in resolved), None)
+    questions = questions_for(workspace, QUESTION_BANK)
+    question = next((q for q in questions if q["id"] not in resolved), None)
     if question is None:
         return None
     profile = workspace["profile"]
-    text = question["plain"] if profile["reading_level"] == "plain" else question["technical"]
+    text = (
+        question["plain"]
+        if profile["reading_level"] == "plain"
+        else question["technical"]
+    )
     for formal, preferred in profile["vocabulary"].items():
         text = re.sub(rf"\b{re.escape(formal)}\b", preferred, text, flags=re.I)
     result = copy.deepcopy(question)
     result["text"] = text
     result["position"] = len(resolved) + 1
-    result["total"] = len(QUESTION_BANK)
+    result["total"] = len(questions)
+    result.setdefault("basis", "missing_owner_fact")
     if question["term"] in profile["unfamiliar_terms"]:
         result["gloss"] = _gloss(question["term"])
     return result
@@ -173,14 +186,22 @@ def _gloss(term: str) -> str:
         "spillway": "the channel that safely carries extra water past the dam",
         "notification flowchart": "the ordered list of who calls whom",
         "preparedness": "what is ready before an incident",
+        "dam height": "the vertical distance from the lowest foundation point to the top of the dam",
         "downstream": "the land and people in the direction water flows",
     }.get(term, term)
 
 
 def record_answer(
-    workspace: dict[str, Any], question_id: str, answer: str, *, did_not_understand: bool = False
+    workspace: dict[str, Any],
+    question_id: str,
+    answer: str,
+    *,
+    did_not_understand: bool = False,
 ) -> dict[str, Any]:
-    question = next((q for q in QUESTION_BANK if q["id"] == question_id), None)
+    question = next(
+        (q for q in questions_for(workspace, QUESTION_BANK) if q["id"] == question_id),
+        None,
+    )
     if question is None:
         raise ValueError("unknown question")
     if question_id in workspace["answers"]:
@@ -198,17 +219,39 @@ def record_answer(
     clean = " ".join(answer.split())
     if not clean:
         raise ValueError("answer cannot be empty")
+    recorded_at = utc_now()
     workspace["answers"][question_id] = {
         "answer": clean,
         "category": question["category"],
         "section": question["section"],
-        "recorded_at": utc_now(),
+        "recorded_at": recorded_at,
         "provenance": "owner",
+        "version": 1,
+        "history": [
+            {
+                "version": 1,
+                "answer": clean,
+                "recorded_at": recorded_at,
+                "reason": "initial owner answer",
+            }
+        ],
     }
+    mark_conflict_response(workspace, question_id, clean)
     workspace["asked"].append(question_id)
     workspace["sessions"][-1]["answers"] += 1
     workspace["plan"] = compose_plan(workspace["answers"])
     workspace["updated_at"] = utc_now()
+    return workspace
+
+
+def revise_answer(
+    workspace: dict[str, Any], question_id: str, revised_answer: str, *, reason: str
+) -> dict[str, Any]:
+    """Apply owner correction to the work product and retain the previous version."""
+    at = utc_now()
+    revise_owner_answer(workspace, question_id, revised_answer, reason, at)
+    workspace["plan"] = compose_plan(workspace["answers"])
+    workspace["updated_at"] = at
     return workspace
 
 
@@ -233,9 +276,15 @@ def record_feedback(
         if not revised_text.strip():
             raise ValueError("edit requires revised text")
         event["revised_text"] = revised_text.strip()
-        pairs = re.findall(r"call (?:it|the) ['\"]?([a-z ]+)['\"]? instead of ['\"]?([a-z ]+)", revised_text, re.I)
+        pairs = re.findall(
+            r"call (?:it|the) ['\"]?([a-z ]+)['\"]? instead of ['\"]?([a-z ]+)",
+            revised_text,
+            re.I,
+        )
         for preferred, formal in pairs:
-            workspace["profile"]["vocabulary"][formal.strip().lower()] = preferred.strip().lower()
+            workspace["profile"]["vocabulary"][
+                formal.strip().lower()
+            ] = preferred.strip().lower()
     if "too much detail" in reason.lower():
         workspace["profile"]["detail_preference"] = "terse"
     workspace["profile"]["feedback_events"].append(event)
@@ -267,6 +316,7 @@ def compose_plan(answers: dict[str, Any]) -> list[dict[str, Any]]:
     notification = answers.get("emergency_manager", {}).get("answer")
     access = answers.get("access_heavy_rain", {}).get("answer")
     affected = answers.get("downstream_people", {}).get("answer")
+    conflict = answers.get("resolve_dam_height_conflict", {}).get("answer")
     sections = [
         {
             "key": "purpose",
@@ -293,7 +343,18 @@ def compose_plan(answers: dict[str, Any]) -> list[dict[str, Any]]:
             "key": "affected_areas",
             "title": "Downstream local knowledge",
             "status": "ready_for_review" if affected else "needs_owner_fact",
-            "text": affected or "Unmapped people, activities, and access constraints still needed.",
+            "text": affected
+            or "Unmapped people, activities, and access constraints still needed.",
+            "source": None,
+        },
+        {
+            "key": "site_facts",
+            "title": "Conflicting site facts",
+            "status": (
+                "needs_qualified_confirmation" if conflict else "needs_owner_fact"
+            ),
+            "text": conflict
+            or "The 28-foot registry and 31-foot drawing values still conflict.",
             "source": None,
         },
         {
@@ -314,6 +375,8 @@ def public_view(workspace: dict[str, Any]) -> dict[str, Any]:
     view["progress"] = {
         "answered": len(workspace["answers"]),
         "skipped": len(workspace["skipped"]),
-        "total": len(QUESTION_BANK),
+        "total": len(questions_for(workspace, QUESTION_BANK)),
     }
+    view["adaptation"] = adaptation_snapshot(workspace)
+    view["evidence_ledger"] = evidence_ledger(workspace)
     return view

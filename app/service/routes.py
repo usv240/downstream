@@ -13,11 +13,14 @@ from pydantic import BaseModel, Field
 from downstream.bonus import gemma_redaction_proof
 from downstream.partner import (
     REQUIREMENTS,
+    QUESTION_BANK,
     create_workspace,
+    next_question,
     public_view,
     record_answer,
     record_feedback,
     resume,
+    revise_answer,
     skip_question,
 )
 from downstream.registry import fallback_records, search_high_hazard_unreported
@@ -44,6 +47,11 @@ class FeedbackRequest(BaseModel):
     revised_text: str = Field(default="", max_length=1200)
 
 
+class RevisionRequest(BaseModel):
+    revised_answer: str = Field(min_length=1, max_length=1200)
+    reason: str = Field(min_length=2, max_length=500)
+
+
 def build_router(store: WorkspaceStore) -> APIRouter:
     router = APIRouter(prefix="/downstream", tags=["downstream"])
 
@@ -53,11 +61,12 @@ def build_router(store: WorkspaceStore) -> APIRouter:
             raise HTTPException(status_code=404, detail=f"no workspace {workspace_id}")
         return workspace
 
-
     @router.get("/fixtures/drawing")
     def drawing_fixture() -> dict[str, Any]:
         recording = json.loads(
-            (FIXTURES / "cedar_hollow_drawing.recording.json").read_text(encoding="utf-8")
+            (FIXTURES / "cedar_hollow_drawing.recording.json").read_text(
+                encoding="utf-8"
+            )
         )
         truth = json.loads(
             (FIXTURES / "cedar_hollow_drawing.truth.json").read_text(encoding="utf-8")
@@ -66,15 +75,20 @@ def build_router(store: WorkspaceStore) -> APIRouter:
             (FIXTURES / "drawing_accuracy_report.json").read_text(encoding="utf-8")
         )
         return {
-            "name": "cedar_hollow_drawing", "synthetic": True,
+            "name": "cedar_hollow_drawing",
+            "synthetic": True,
             "image_url": "/downstream/fixtures/drawing/image",
-            "recording": recording, "truth": truth, "accuracy": report,
+            "recording": recording,
+            "truth": truth,
+            "accuracy": report,
             "note": "One recorded Vertex AI Gemini 3.5 Flash call, graded against adjacent truth.",
         }
 
     @router.get("/fixtures/drawing/image")
     def drawing_fixture_image() -> FileResponse:
-        return FileResponse(FIXTURES / "cedar_hollow_drawing.png", media_type="image/png")
+        return FileResponse(
+            FIXTURES / "cedar_hollow_drawing.png", media_type="image/png"
+        )
 
     @router.get("/bonus")
     def bonus() -> dict[str, Any]:
@@ -123,7 +137,8 @@ def build_router(store: WorkspaceStore) -> APIRouter:
 
     @router.get("/nid/search")
     def nid_search(
-        limit: int = Query(default=5, ge=1, le=25), state: str | None = Query(default=None)
+        limit: int = Query(default=5, ge=1, le=25),
+        state: str | None = Query(default=None),
     ) -> dict[str, Any]:
         try:
             result = search_high_hazard_unreported(limit=limit, state=state)
@@ -146,6 +161,16 @@ def build_router(store: WorkspaceStore) -> APIRouter:
     def get_workspace(workspace_id: str) -> dict[str, Any]:
         return public_view(require(workspace_id))
 
+    @router.get("/workspaces/{workspace_id}/audit")
+    def workspace_audit(workspace_id: str) -> dict[str, Any]:
+        view = public_view(require(workspace_id))
+        return {
+            "workspace_id": workspace_id,
+            "adaptation": view["adaptation"],
+            "evidence_ledger": view["evidence_ledger"],
+            "disclosure": view["disclosure"],
+        }
+
     @router.post("/workspaces/{workspace_id}/resume")
     def resume_workspace(workspace_id: str) -> dict[str, Any]:
         workspace = resume(require(workspace_id))
@@ -161,6 +186,20 @@ def build_router(store: WorkspaceStore) -> APIRouter:
                 request.question_id,
                 request.answer,
                 did_not_understand=request.did_not_understand,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        store.put(workspace)
+        return public_view(workspace)
+
+    @router.post("/workspaces/{workspace_id}/answers/{question_id}/revise")
+    def revise(
+        workspace_id: str, question_id: str, request: RevisionRequest
+    ) -> dict[str, Any]:
+        workspace = require(workspace_id)
+        try:
+            revise_answer(
+                workspace, question_id, request.revised_answer, reason=request.reason
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -205,9 +244,14 @@ def build_router(store: WorkspaceStore) -> APIRouter:
             jurisdiction_accepts=False,
             reference_comparison_passed=False,
         )
-        check("unvalidated inundation extent fails closed", not decision.may_render_extent)
+        check(
+            "unvalidated inundation extent fails closed", not decision.may_render_extent
+        )
         check("safe stop carries a next action", bool(decision.next_step))
-        check("screening disclosure names what was not generated", "No inundation" in decision.disclosure)
+        check(
+            "screening disclosure names what was not generated",
+            "No inundation" in decision.disclosure,
+        )
 
         source = REQUIREMENTS["purpose"]["text"]
         verifier = Verifier({"fema_p64": source})
@@ -224,7 +268,9 @@ def build_router(store: WorkspaceStore) -> APIRouter:
                 id="valid_ref",
                 text="An EAP identifies emergency conditions and actions.",
                 kind=ClaimKind.REGULATORY,
-                source_refs=(SourceRef("fema_p64", "identifies potential emergency conditions"),),
+                source_refs=(
+                    SourceRef("fema_p64", "identifies potential emergency conditions"),
+                ),
             )
         )
         check("empty quotation cannot support a claim", not empty.accepted)
@@ -234,6 +280,34 @@ def build_router(store: WorkspaceStore) -> APIRouter:
         meter = public_view(workspace)["context_meter"]
         check("structured context starts within its bound", meter["within_bound"])
         check("all public output is labelled draft", "Draft" in DRAFT_DISCLOSURE)
+        for index, question in enumerate(QUESTION_BANK):
+            record_answer(workspace, question["id"], f"Owner fact {index + 1}")
+        conflict_question = next_question(workspace)
+        check(
+            "source conflict creates a targeted clarification",
+            conflict_question is not None
+            and conflict_question.get("basis") == "unresolved_source_conflict",
+        )
+        record_answer(
+            workspace,
+            conflict_question["id"],
+            "Use 31 feet only after the engineer confirms the legacy drawing.",
+        )
+        revise_answer(
+            workspace,
+            "access_heavy_rain",
+            "The east lane washes out at the second bend.",
+            reason="Owner corrected the access location.",
+        )
+        adapted = public_view(workspace)
+        check(
+            "owner correction changes the draft with history",
+            adapted["adaptation"]["answer_revisions"] == 1,
+        )
+        check(
+            "every rendered section exposes its evidence class",
+            all(row["rendered_from_evidence"] for row in adapted["evidence_ledger"]),
+        )
         passed = sum(row["pass"] for row in checks)
         return {
             "passed": passed,
@@ -256,6 +330,16 @@ def build_router(store: WorkspaceStore) -> APIRouter:
                     "rule": "captures feedback and adapts to the user's way of thinking",
                     "implementation": "downstream/partner.py: record_feedback and profile",
                     "test": "tests/test_partner.py::test_unknown_term_changes_later_language",
+                },
+                {
+                    "rule": "turns conflicting retrieved facts into targeted clarification",
+                    "implementation": "downstream/collaboration.py: questions_for",
+                    "test": "tests/test_collaboration.py::test_source_conflict_becomes_a_targeted_question",
+                },
+                {
+                    "rule": "owner corrections mutate the draft and preserve revision history",
+                    "implementation": "downstream/partner.py: revise_answer",
+                    "test": "tests/test_collaboration.py::test_revision_changes_plan_and_keeps_history",
                 },
                 {
                     "rule": "manages state and context across sessions",

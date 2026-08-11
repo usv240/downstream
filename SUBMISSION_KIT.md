@@ -31,7 +31,7 @@ Cloud Trace primitives, USACE NID public FeatureServer, FastAPI, accessible HTML
 
 - Public project URL returns 200.
 - `/health`, `/downstream/proof`, and `/downstream/conformance` are public.
-- 171 tests, accessibility, and 20/20 deployed flow pass.
+- 185 tests, accessibility, and 24/24 executable flow pass.
 - GitHub repository is public and README setup works.
 - Architecture source and rendered SVG are visible.
 - Demo video is public on YouTube or Vimeo and approximately four minutes.

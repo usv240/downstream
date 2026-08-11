@@ -10,8 +10,9 @@ Live URL: https://downstream-109051079423.us-central1.run.app
 Repository: https://github.com/usv240/downstream
 
 Judge path: open the product, select **Start clean preset**, answer the first question with **I do
-not know what that means**, inspect the changed reading profile and context meter, then run
-`/downstream/proof`.
+not know what that means**, inspect the changed reading profile, complete the five owner gaps, and
+watch the 28 versus 31 foot source conflict become a targeted sixth question. Revise the access
+answer and inspect its preserved history and section evidence ledger, then run `/downstream/proof`.
 
 ## What it proves
 
@@ -22,8 +23,12 @@ not know what that means**, inspect the changed reading profile and context mete
 - A durable Firestore workspace that preserves facts, sessions, preferences, progress, and draft
   sections across visits.
 - One question at a time, with no repeats and a visible reason for each question.
-- Feedback that changes later behavior: reading level, vocabulary, and detail preference are stored
-  separately from domain facts and remain inspectable.
+- Retrieved facts that disagree create a targeted clarification with both source values attached.
+  An owner response adds context but cannot falsely resolve the engineering conflict.
+- Feedback changes the work product. An owner correction creates a numbered immutable history,
+  updates the affected plan section, and remains visible through a public audit route.
+- Every rendered section publishes an evidence class: owner answer, published requirement, or
+  fail-closed safety policy.
 - Bounded context: deduplicated facts, one active section, and fixed-k requirements remain within a
   670-token application budget as empty sessions accumulate.
 - A fail-closed mapping gate. The demo renders a single flow-path input, never an inundation extent,
@@ -35,20 +40,27 @@ not know what that means**, inspect the changed reading profile and context mete
 ```mermaid
 flowchart LR
     NID[USACE NID FeatureServer] --> R[Registry reader]
-    IMG[Synthetic legacy drawing] --> G[Gemini 3.5 Flash]
-    G --> Q[Quote containment gate]
-    OWNER[Owner, many short sessions] <--> P[Interviewer and profile]
+    IMG[Synthetic legacy drawing] --> G[Vertex AI Gemini 3.5 Flash]
+    G --> Q[Transcription and quote gate]
     R --> FACTS[Provenance-bearing facts]
     Q --> FACTS
-    P <--> DB[(Firestore workspace)]
-    FACTS --> DB
+    FACTS --> X{Sources conflict?}
+    X -->|yes| P[Targeted clarification]
+    X -->|no| DB[(Firestore workspace)]
+    OWNER[Owner, many short sessions] <--> P
+    P --> H[Versioned answer history]
+    H <--> DB
+    DB --> M[Bounded memory and profile]
+    M --> P
     DB --> C[Section composer]
     REQ[FEMA and ASDSO requirement passages] --> V[Verifier]
     C --> V
+    V --> L[Section evidence ledger]
     MAP[Mapping applicability gate] -->|unproven| STOP[Safe stop, flow path only]
-    V --> DRAFT[Reviewable EAP draft]
-    STOP --> DRAFT
+    STOP --> L
+    L --> DRAFT[Reviewable EAP draft]
     DRAFT --> UI[Accessible Cloud Run web app]
+    UI -->|owner correction| P
 ```
 
 The Mermaid source is also in `docs/architecture.mmd`, with a rendered
@@ -102,7 +114,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 171 tests, accessibility green in both themes, and 20/20 demo checks.
+Current verified result: 185 tests, accessibility green in both themes, and 24/24 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:

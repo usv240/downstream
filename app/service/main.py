@@ -55,4 +55,4 @@ def index() -> FileResponse:
 
 @app.get("/judges", include_in_schema=False)
 def judges() -> FileResponse:
-    return FileResponse(WEB / "downstream-judges.html")
+    return FileResponse(WEB / "downstream-judges-v2.html")

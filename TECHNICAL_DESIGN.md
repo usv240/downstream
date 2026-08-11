@@ -27,8 +27,13 @@ The real response, ground truth, image, and 5/5 report ship in `app/fixtures/`.
 ## Partner loop
 
 `downstream/partner.py` owns the bounded question bank and profile. The engine checks resolved facts
-before returning the next question. Answers are normalized into provenance-bearing facts. Feedback
-changes reading level and detail preference separately from domain knowledge.
+before returning the next question. `downstream/collaboration.py` adds a targeted question when
+retrieved sources conflict, attaches both source fragments, and records the owner's context without
+marking the technical discrepancy resolved. Answers are normalized into provenance-bearing facts.
+
+Owner corrections create numbered answer versions, retain the initial answer and reason for change,
+and immediately recompose the affected draft section. The public audit route exposes an adaptation
+snapshot and a section-by-section evidence ledger.
 
 The context meter models three bounded inputs: deduplicated facts, one current section, and fixed-k
 requirement passages. Empty sessions increase the transcript-replay comparison but do not increase

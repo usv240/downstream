@@ -14,8 +14,8 @@
 | Claim | Regenerable artifact |
 |---|---|
 | Gemini drawing extraction scored 5/5 | `app/fixtures/drawing_accuracy_report.json` |
-| 171 tests pass | `cd app && python -m pytest -q` |
-| 20/20 end-to-end checks pass | `app/scripts/downstream_demo_flow.py` |
+| 185 tests pass | `cd app && python -m pytest -q` |
+| 24/24 end-to-end checks pass | `app/scripts/downstream_demo_flow.py` |
 | Both themes pass the accessibility gate | `app/scripts/check_a11y.py` |
 
 ## Corrections made during implementation
@@ -23,3 +23,8 @@
 The archived design translated an unreported public EAP field into an estimate of dams without an
 EAP. A live field audit showed that this inference is not defensible. The implementation now says
 only that the selected public field is unreported and uses a synthetic dam for authoring.
+
+A parity audit found that the first implementation displayed the 28 versus 31 foot conflict but
+never asked the owner about it, and its generic edit feedback did not change the draft. The shipped
+workflow now creates a targeted conflict question, preserves qualified-review status, versions
+owner corrections, recomposes the affected section, and publishes a section evidence ledger.

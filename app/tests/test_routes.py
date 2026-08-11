@@ -30,10 +30,14 @@ def test_end_to_end_partner_flow():
     first = workspace["next_question"]
     workspace = api.post(
         f"/downstream/workspaces/{workspace_id}/answer",
-        json={"question_id": first["id"], "answer": "Explain", "did_not_understand": True},
+        json={
+            "question_id": first["id"],
+            "answer": "Explain",
+            "did_not_understand": True,
+        },
     ).json()
     assert workspace["next_question"]["id"] == first["id"]
-    for index in range(5):
+    for index in range(6):
         question = workspace["next_question"]
         workspace = api.post(
             f"/downstream/workspaces/{workspace_id}/answer",
@@ -43,7 +47,7 @@ def test_end_to_end_partner_flow():
             },
         ).json()
     assert workspace["next_question"] is None
-    assert workspace["progress"]["answered"] == 5
+    assert workspace["progress"]["answered"] == 6
     assert workspace["context_meter"]["within_bound"] is True
     assert workspace["mapping"]["may_render_extent"] is False
 
