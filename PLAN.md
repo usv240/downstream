@@ -2,8 +2,8 @@
 
 **Track:** The Collaborative Partner
 
-**Status:** implemented and deployed on August 11, 2026. Standalone GitHub publication and
-the required public demo video remain release gates.
+**Status:** implemented, deployed, and published in a standalone repository on August 11, 2026.
+The required public demo video remains the Stage One release gate.
 
 ## Product promise
 
@@ -41,6 +41,5 @@ insufficient.
 ## Remaining release work
 
 1. Complete a visual browser walkthrough on desktop and mobile when the browser connector ACL permits it.
-2. Initialize and publish the standalone GitHub repository.
-3. Record and publish the required approximately four-minute demo.
-4. Enter the separate Devpost submission under The Collaborative Partner.
+2. Record and publish the required approximately four-minute demo.
+3. Enter the separate Devpost submission under The Collaborative Partner.
