@@ -1,0 +1,23 @@
+{
+  "transcription": "CEDAR HOLLOW DEMONSTRATION DAM\nGENERAL ARRANGEMENT | SHEET 2 OF 5 | 1958\nTOP OF DAM EL. 742.6\nMAX. EMBANKMENT HT. 31 FT\nCONC. O.F. SPILLWAY 18'-0\"\nSYNTHETIC FIXTURE | NO AGENCY SEAL",
+  "facts": [
+    {
+      "key": "crest_elevation",
+      "value": "742.6",
+      "quoted_text": "TOP OF DAM EL. 742.6",
+      "confidence": 1.0
+    },
+    {
+      "key": "spillway",
+      "value": "CONC. O.F. SPILLWAY 18'-0\"",
+      "quoted_text": "CONC. O.F. SPILLWAY 18'-0\"",
+      "confidence": 1.0
+    },
+    {
+      "key": "dam_height_ft",
+      "value": "31",
+      "quoted_text": "MAX. EMBANKMENT HT. 31 FT",
+      "confidence": 1.0
+    }
+  ]
+}

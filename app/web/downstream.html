@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-project="downstream">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Downstream is a stateful partner for drafting dam Emergency Action Plans with source-grounded facts and explicit safety gates.">
+  <title>Downstream | Emergency planning, built together</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/downstream.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site">
+    <div class="wrap bar">
+      <div class="brand">Downstream <span>Emergency planning, built together</span></div>
+      <nav aria-label="Primary">
+        <a href="#why">Why it matters</a><a href="#workspace">Try the partner</a><a href="#mapping">Safety gate</a><a href="#research">Sources</a><a href="/judges">Judge notes</a>
+      </nav>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch color theme">Dark mode</button>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero"><div class="wrap hero-layout"><div class="hero-copy">
+      <p class="eyebrow">The Collaborative Partner</p><h1>A plan no owner should have to write alone.</h1>
+      <p class="lede">Downstream combines public dam records, reviewable document facts, and the knowledge only an owner has. It asks one useful question at a time, remembers across sessions, and assembles a cited Emergency Action Plan draft for qualified review.</p>
+      <div class="btn-row"><a class="btn btn-primary" href="#workspace">Open the judge preset</a><a class="btn" href="/downstream/proof">Run the safety proof</a></div>
+      <p class="boundary-line"><b>Boundary:</b> this demo never generates an inundation boundary, evacuation zone, certification, or submission. It produces a synthetic draft and a documented safe stop.</p>
+    </div><aside class="hero-proof" aria-label="Measured public-data snapshot">
+      <span class="proof-label">USACE NID snapshot, measured Aug 11, 2026</span><strong class="proof-value">92,606</strong><span>public dam records queried through the official FeatureServer</span>
+      <ul class="proof-list"><li><b>16,972</b> carry a high-hazard consequence classification</li><li><b>5</b> owner questions in the synthetic preset</li><li><b>0</b> unvalidated inundation boundaries rendered</li></ul>
+    </aside></div></section>
+
+    <section id="why"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">The friction</p><h2>The form is not the hard part.</h2></div><p>Facts are scattered across public records, old drawings, local memory, and jurisdiction-specific guidance.</p></div>
+      <div class="journey"><article class="journey-step"><span class="step-index">01 Discover</span><h3>Resolve what is already known</h3><p>Read the federal record and drawing evidence before asking the owner.</p></article><article class="journey-step"><span class="step-index">02 Ask</span><h3>One question at a time</h3><p>Capture practical knowledge in short sessions, with a reason for every question.</p></article><article class="journey-step"><span class="step-index">03 Adapt</span><h3>Learn how this owner works</h3><p>Plain language, vocabulary, detail level, and corrections change later interactions.</p></article><article class="journey-step"><span class="step-index">04 Review</span><h3>Build a traceable draft</h3><p>Every fact has provenance and regulatory text needs a contained source quote.</p></article></div>
+    </div></section>
+
+    <section id="evidence"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">Measured multimodal evidence</p><h2>The drawing was read, recorded, and graded.</h2></div><p>One real Vertex AI Gemini 3.5 Flash response ships beside the image, truth, and accuracy report.</p></div>
+      <div class="model-briefing"><div class="briefing-media" style="grid-template-columns:1fr"><img src="/downstream/fixtures/drawing/image" alt="Synthetic 1958-style Cedar Hollow dam drawing with crest elevation, spillway, and embankment height labels"></div>
+      <div class="briefing-copy"><span class="model-chip">Gemini 3.5 Flash, recorded output</span><h3>5 of 5 measured checks passed</h3><dl class="model-proof"><div><dt>3/3</dt><dd>target values matched adjacent truth</dd></div><div><dt>All</dt><dd>quotes occur in Gemini's own transcription</dd></div><div><dt>0</dt><dd>facts dropped by the guard</dd></div></dl>
+      <p>The drawing says 31 feet while the synthetic registry fixture says 28. Downstream keeps both and marks the conflict for owner review.</p><p><a class="text-link" href="/downstream/fixtures/drawing">Inspect the recording, truth, and score</a></p></div></div>
+    </div></section>
+
+
+
+    <section id="workspace"><div class="wrap"><div class="console-intro"><div><p class="eyebrow">Interactive judge preset</p><h2>Build the draft with Cedar Hollow.</h2><p>A synthetic dam keeps the workflow testable without making claims about a real owner.</p></div><button class="btn-primary" id="start-demo" type="button">Start clean preset</button></div>
+      <p class="demo-banner">Synthetic demonstration data. The public NID query below is live, but real records are never treated as evidence of noncompliance.</p>
+      <div class="console-shell" style="margin-top:16px"><div class="partner-shell" aria-live="polite">
+        <aside class="pane"><h3>Plan progress</h3><p class="small muted" id="progress-copy">Start the preset to create a durable workspace.</p><ol class="progress-list" id="progress-list"></ol><h3 class="subhead">Context meter</h3><div id="context-meter" class="muted small">No session yet.</div></aside>
+        <section class="pane" style="padding:0;border:0;box-shadow:none;background:transparent"><article class="question-card" id="question-card"><span class="eyebrow">Partner waiting</span><h3>Start a clean preset.</h3><p>I will resolve three drawing facts first, surface one conflict, and ask only what the fixture cannot answer.</p></article></section>
+        <aside class="pane"><h3>Reviewable draft</h3><div class="plan-stack" id="plan-stack"><p class="muted small">Sections appear as owner facts arrive.</p></div><div class="btn-row"><button id="accept-plan" type="button" disabled>Accept style</button><button id="less-detail" type="button" disabled>Too much detail</button></div></aside>
+      </div></div>
+      <div class="profile-grid" id="profile-grid" style="margin-top:14px"><div class="profile-item"><small>Reading level</small><b>Not learned yet</b></div><div class="profile-item"><small>Vocabulary</small><b>No preferences yet</b></div><div class="profile-item"><small>Sessions</small><b>0</b></div></div>
+    </div></section>
+
+    <section id="mapping"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">Mapping safety gate</p><h2>Useful enough to guide, disciplined enough to stop.</h2></div><p>The line is a documented flow-path input. It is deliberately not drawn as an area.</p></div>
+      <div class="grid-3" style="grid-template-columns:1.4fr .6fr"><div class="map-frame" role="img" aria-label="Diagram showing a dam and a single downstream flow path, not an inundation area"><svg viewBox="0 0 760 350" aria-hidden="true"><path d="M0 82 C180 38 340 122 760 52 L760 0 L0 0 Z" fill="#d7e5d3" opacity=".75"/><path d="M0 300 C160 250 270 330 430 275 C560 230 650 275 760 240 L760 350 L0 350 Z" fill="#d4e1d5"/><path d="M215 78 C225 136 305 151 332 205 C366 270 492 243 577 313" fill="none" stroke="#2d7191" stroke-width="8" stroke-linecap="round"/><path d="M174 95 L270 67" fill="none" stroke="#4b5965" stroke-width="12" stroke-linecap="round"/><path d="M510 245 L687 197" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".88"/><path d="M510 245 L687 197" fill="none" stroke="#74808c" stroke-width="2" stroke-dasharray="10 8"/><circle cx="216" cy="82" r="8" fill="#a33131"/></svg><span class="map-label dam">Synthetic dam</span><span class="map-label road">County road input</span></div>
+      <div><div class="safe-stop"><b aria-hidden="true">!</b><div><h3>Boundary withheld</h3><p>No approved map was supplied. Method applicability, jurisdictional acceptance, and reference comparison are unproven. Downstream refuses to invent an extent.</p></div></div><div class="card" style="margin-top:14px"><h3>Next safe action</h3><p class="small muted">Request an approved map or route this section to the state dam-safety office or a qualified engineer.</p></div></div></div>
+    </div></section>
+
+    <section id="research"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">Public evidence</p><h2>Every number and requirement has a route back.</h2></div><button id="load-nid" type="button">Run live NID query</button></div>
+      <div id="nid-result" class="callout"><p>Live query not run yet. It requests high-hazard records whose public EAP status field is null, and labels that field as unreported rather than absent.</p></div>
+      <div class="table-scroll"><table class="plain source-table"><thead><tr><th>Source</th><th>What it supports</th><th>Boundary</th></tr></thead><tbody><tr><td><a href="https://nid.sec.usace.army.mil/nid/">USACE National Inventory of Dams</a></td><td>Public inventory and live record fields</td><td>Inventory status is not structural condition or proof of compliance</td></tr><tr><td><a href="https://www.fema.gov/sites/default/files/2020-08/fema_dam-safety_emergency-action-planning_P-64.pdf">FEMA P-64</a></td><td>EAP purpose, roles, and typical contents</td><td>Federal guidance does not replace state requirements</td></tr><tr><td><a href="https://damsafety.org/dam-owners/emergency-action-planning">ASDSO Emergency Action Planning</a></td><td>Owner collaboration and notification planning</td><td>State review and emergency-manager coordination remain necessary</td></tr><tr><td><a href="https://www.damsafety.org/sites/default/files/files/EAPWG%20Final%20SIMS.pdf">SIMS methodology</a></td><td>When simplified mapping may be applicable</td><td>Not a substitute for engineering judgment or regulatory compliance</td></tr></tbody></table></div>
+    </div></section>
+  </main>
+  <footer class="site"><div class="wrap"><div class="footer-links"><a href="/judges">Judge notes</a><a href="/downstream/conformance">Conformance evidence</a><a href="/downstream/proof">Executable safety proof</a><a href="/docs">API</a></div><p>Downstream is an independent hackathon prototype. It is not affiliated with or endorsed by USACE, FEMA, ASDSO, or any state agency. No agency seals are used.</p></div></footer>
+  <script src="/static/downstream.js" defer></script>
+</body></html>

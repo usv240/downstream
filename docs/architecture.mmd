@@ -1,0 +1,16 @@
+flowchart LR
+    NID[USACE NID FeatureServer] --> R[Registry reader]
+    IMG[Synthetic legacy drawing] --> G[Vertex AI Gemini 3.5 Flash]
+    G --> Q[Transcription and quote gate]
+    OWNER[Owner, many short sessions] <--> P[Interviewer and profile]
+    R --> FACTS[Provenance-bearing facts]
+    Q --> FACTS
+    P <--> DB[(Firestore workspace)]
+    FACTS --> DB
+    DB --> C[Section composer]
+    REQ[FEMA and ASDSO passages] --> V[Verifier]
+    C --> V
+    MAP[Mapping applicability gate] -->|unproven| STOP[Safe stop, flow path only]
+    V --> DRAFT[Reviewable EAP draft]
+    STOP --> DRAFT
+    DRAFT --> UI[Accessible Cloud Run web app]

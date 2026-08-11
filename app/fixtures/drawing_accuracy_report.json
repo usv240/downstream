@@ -1,0 +1,15 @@
+{
+  "model": "gemini-3.5-flash",
+  "location": "global",
+  "project": "agentic-fleet-2026",
+  "fields": {
+    "crest_elevation": true,
+    "spillway_width": true,
+    "dam_height_ft": true,
+    "all_quotes_grounded": true,
+    "no_dropped_facts": true
+  },
+  "correct": 5,
+  "total": 5,
+  "synthetic_fixture": true
+}
