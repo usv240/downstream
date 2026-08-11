@@ -27,6 +27,12 @@ def test_end_to_end_partner_flow():
     api = client()
     workspace = api.post("/downstream/workspaces", json={}).json()
     workspace_id = workspace["workspace_id"]
+    first = workspace["next_question"]
+    workspace = api.post(
+        f"/downstream/workspaces/{workspace_id}/answer",
+        json={"question_id": first["id"], "answer": "Explain", "did_not_understand": True},
+    ).json()
+    assert workspace["next_question"]["id"] == first["id"]
     for index in range(5):
         question = workspace["next_question"]
         workspace = api.post(
@@ -34,7 +40,6 @@ def test_end_to_end_partner_flow():
             json={
                 "question_id": question["id"],
                 "answer": f"Owner fact {index}",
-                "did_not_understand": index == 0,
             },
         ).json()
     assert workspace["next_question"] is None

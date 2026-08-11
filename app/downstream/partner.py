@@ -185,6 +185,16 @@ def record_answer(
         raise ValueError("unknown question")
     if question_id in workspace["answers"]:
         raise ValueError("question already answered")
+    if did_not_understand:
+        term = question["term"]
+        if term not in workspace["profile"]["unfamiliar_terms"]:
+            workspace["profile"]["unfamiliar_terms"].append(term)
+        workspace["profile"]["reading_level"] = "plain"
+        workspace["profile"]["feedback_events"].append(
+            {"type": "term_not_understood", "term": term, "at": utc_now()}
+        )
+        workspace["updated_at"] = utc_now()
+        return workspace
     clean = " ".join(answer.split())
     if not clean:
         raise ValueError("answer cannot be empty")
@@ -197,14 +207,6 @@ def record_answer(
     }
     workspace["asked"].append(question_id)
     workspace["sessions"][-1]["answers"] += 1
-    if did_not_understand:
-        term = question["term"]
-        if term not in workspace["profile"]["unfamiliar_terms"]:
-            workspace["profile"]["unfamiliar_terms"].append(term)
-        workspace["profile"]["reading_level"] = "plain"
-        workspace["profile"]["feedback_events"].append(
-            {"type": "term_not_understood", "term": term, "at": utc_now()}
-        )
     workspace["plan"] = compose_plan(workspace["answers"])
     workspace["updated_at"] = utc_now()
     return workspace

@@ -100,7 +100,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 164 tests, accessibility green in both themes, and 19/19 demo checks.
+Current verified result: 166 tests, accessibility green in both themes, and 19/19 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:

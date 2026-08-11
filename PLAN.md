@@ -29,7 +29,7 @@ insufficient.
 
 ## Acceptance gates
 
-- 164 tests green.
+- 166 tests green.
 - 19/19 executable demo checks green.
 - WCAG 2.2 AA token checks green in light and dark themes.
 - Gemini drawing record graded 5/5 against adjacent synthetic truth.

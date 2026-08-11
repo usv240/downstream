@@ -60,12 +60,22 @@ def main() -> int:
         f"/downstream/workspaces/{workspace_id}/answer",
         {
             "question_id": first["id"],
-            "answer": "The gravel lane washes out at the second bend.",
+            "answer": "Please explain this term.",
             "did_not_understand": True,
         },
     )
     check("feedback changes profile", workspace["profile"]["reading_level"] == "plain")
-    check("later question uses plain wording", workspace["next_question"]["text"] == workspace["next_question"]["plain"])
+    check(
+        "same unresolved question is re-asked plainly",
+        workspace["next_question"]["id"] == first["id"]
+        and workspace["next_question"]["text"] == workspace["next_question"]["plain"]
+        and bool(workspace["next_question"].get("gloss")),
+    )
+    workspace = api.call(
+        "POST",
+        f"/downstream/workspaces/{workspace_id}/answer",
+        {"question_id": first["id"], "answer": "The gravel lane washes out at the second bend."},
+    )
     check("answer becomes a structured owner fact", workspace["answers"][first["id"]]["provenance"] == "owner")
 
     for index in range(4):
