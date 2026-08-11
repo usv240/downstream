@@ -14,8 +14,8 @@
 | Claim | Regenerable artifact |
 |---|---|
 | Gemini drawing extraction scored 5/5 | `app/fixtures/drawing_accuracy_report.json` |
-| 185 tests pass | `cd app && python -m pytest -q` |
-| 24/24 end-to-end checks pass | `app/scripts/downstream_demo_flow.py` |
+| 191 tests pass | `cd app && python -m pytest -q` |
+| 26/26 end-to-end checks pass | `app/scripts/downstream_demo_flow.py` |
 | Both themes pass the accessibility gate | `app/scripts/check_a11y.py` |
 
 ## Corrections made during implementation
