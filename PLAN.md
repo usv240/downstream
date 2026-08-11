@@ -3,7 +3,7 @@
 **Track:** The Collaborative Partner
 
 **Status:** implemented, deployed, and published in a standalone repository on August 11, 2026.
-The required public demo video remains the Stage One release gate.
+The public build story is live. The required public demo video remains the Stage One release gate.
 
 ## Product promise
 

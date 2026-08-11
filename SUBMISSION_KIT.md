@@ -14,6 +14,8 @@ answers, adapting language, tracking incomplete sections, and assembling a trace
 **Technology:** Gemini 3.5 Flash through Vertex AI and the Google Gen AI SDK, Cloud Run, Firestore,
 Cloud Trace primitives, USACE NID public FeatureServer, FastAPI, accessible HTML, SVG, and Python.
 
+**Public build story:** [The Registry Said 28 Feet. The Drawing Said 31.](https://dev.to/ujwal240/the-registry-said-28-feet-the-drawing-said-31-4dma)
+
 ## Four-minute shot list
 
 | Time | Screen | Narration goal |
@@ -37,3 +39,5 @@ Cloud Trace primitives, USACE NID public FeatureServer, FastAPI, accessible HTML
 - Demo video is public on YouTube or Vimeo and approximately four minutes.
 - Correct category, teammates, Representative, repository, URL, and video are set on Devpost.
 - Synthetic-data, AI-assistance, source, no-endorsement, and safety disclosures are visible.
+- Public build story URL is entered in Devpost.
+- Public X post with `#AllThingsAgenticHackathon` is published and entered in Devpost.

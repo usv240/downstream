@@ -11,3 +11,14 @@ survive the complete replay gate. This is a real privacy job in the workflow, no
 model call.
 
 No Imagen, Veo, or Lyria bonus is claimed for Downstream at this point.
+
+## Public build content: published evidence for up to 0.2
+
+[The Registry Said 28 Feet. The Drawing Said 31.](https://dev.to/ujwal240/the-registry-said-28-feet-the-drawing-said-31-4dma)
+is public on DEV Community and contains the required hackathon-purpose disclosure. Add this exact
+URL to the Downstream Devpost submission. Judges determine whether the contribution earns the bonus.
+
+## Social publication: pending, up to 0.2
+
+Publish the prepared project-specific copy on X with the exact hashtag
+`#AllThingsAgenticHackathon`, then add the public post URL to the Downstream Devpost submission.
