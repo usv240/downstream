@@ -27,6 +27,7 @@ include = ["spine*", "downstream*", "service*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = ["-p", "no:asyncio"]
 
 [tool.ruff]
 line-length = 100
