@@ -10,3 +10,5 @@ Verified locally on August 11, 2026:
 - The OpenAPI surface contains no approve, certify, submit, or evacuation endpoint.
 
 Deployed as Cloud Run revision `downstream-00001-7cl` at https://downstream-109051079423.us-central1.run.app. All six public judge routes return 200 and the deployed end-to-end flow passes 19/19.
+
+- Public standalone repository: https://github.com/usv240/downstream

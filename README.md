@@ -5,7 +5,7 @@ Emergency Action Plan draft. It resolves public and document facts first, asks o
 at a time, learns from feedback, and keeps every claim inside an explicit evidence and authority
 boundary.
 
-Live URL: https://downstream-109051079423.us-central1.run.app
+Live URL: https://downstream-109051079423.us-central1.run.app`r`n`r`nRepository: https://github.com/usv240/downstream
 
 Judge path: open the product, select **Start clean preset**, answer the first question with **I do
 not know what that means**, inspect the changed reading profile and context meter, then run
