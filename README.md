@@ -9,10 +9,11 @@ Live URL: https://downstream-109051079423.us-central1.run.app
 
 Repository: https://github.com/usv240/downstream
 
-Judge path: open the product, select **Start clean preset**, answer the first question with **I do
-not know what that means**, inspect the changed reading profile, complete the five owner gaps, and
-watch the 28 versus 31 foot source conflict become a targeted sixth question. Revise the access
-answer and inspect its preserved history and section evidence ledger, then run `/downstream/proof`.
+Judge path: open /?guided=1#workspace. Ask for simpler language once, use the synthetic example
+answers, hold and reopen one question, then watch the 28 versus 31 foot source conflict become a
+targeted sixth question. Save the prepared correction, inspect both answer versions, refresh the
+shareable workspace URL to prove persistence, then open /evidence for the human-readable safety,
+category, Gemini, and Gemma evidence dashboard.
 
 ## What it proves
 
@@ -20,8 +21,8 @@ answer and inspect its preserved history and section evidence ledger, then run `
   graded 5/5 against adjacent truth.
 - Gemma 4 MaaS reviews synthetic owner notes for remaining name spans, recorded at 4/4 recall,
   0 false positives, and 0 identifiers surviving the replay gate.
-- A durable Firestore workspace that preserves facts, sessions, preferences, progress, and draft
-  sections across visits.
+- A durable Firestore workspace with a shareable resume URL that preserves facts, held questions,
+  sessions, preferences, revisions, progress, and draft sections across refreshes.
 - One question at a time, with no repeats and a visible reason for each question.
 - Retrieved facts that disagree create a targeted clarification with both source values attached.
   An owner response adds context but cannot falsely resolve the engineering conflict.
@@ -114,7 +115,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 185 tests, accessibility green in both themes, and 24/24 demo checks.
+Current verified result: 191 tests, accessibility green in both themes, and 26/26 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:

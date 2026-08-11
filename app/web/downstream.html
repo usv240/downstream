@@ -15,16 +15,16 @@
     <div class="wrap bar">
       <div class="brand">Downstream <span>Emergency planning, built together</span></div>
       <nav aria-label="Primary">
-        <a href="#why">Why it matters</a><a href="#workspace">Try the partner</a><a href="#mapping">Safety gate</a><a href="#research">Sources</a><a href="/judges">Judge notes</a>
+        <a href="#why">Why it matters</a><a href="#workspace">Try the partner</a><a href="#mapping">Safety gate</a><a href="#research">Sources</a><a href="/evidence">Evidence</a><a href="/judges">Judge notes</a>
       </nav>
-      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch color theme">Dark mode</button>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch color theme" aria-pressed="false">Dark mode</button>
     </div>
   </header>
   <main id="main">
     <section class="hero"><div class="wrap hero-layout"><div class="hero-copy">
       <p class="eyebrow">The Collaborative Partner</p><h1>A plan no owner should have to write alone.</h1>
       <p class="lede">Downstream combines public dam records, reviewable document facts, and the knowledge only an owner has. It asks one useful question at a time, remembers across sessions, and assembles a cited Emergency Action Plan draft for qualified review.</p>
-      <div class="btn-row"><a class="btn btn-primary" href="#workspace">Open the judge preset</a><a class="btn" href="/downstream/proof">Run the safety proof</a></div>
+      <div class="btn-row"><a class="btn btn-primary" href="#workspace">Open the judge preset</a><a class="btn" href="/evidence#proof">Open the evidence dashboard</a></div>
       <p class="boundary-line"><b>Boundary:</b> this demo never generates an inundation boundary, evacuation zone, certification, or submission. It produces a synthetic draft and a documented safe stop.</p>
     </div><aside class="hero-proof" aria-label="Measured public-data snapshot">
       <span class="proof-label">USACE NID snapshot, measured Aug 11, 2026</span><strong class="proof-value">92,606</strong><span>public dam records queried through the official FeatureServer</span>
@@ -43,14 +43,14 @@
 
 
 
-    <section id="workspace"><div class="wrap"><div class="console-intro"><div><p class="eyebrow">Interactive judge preset</p><h2>Build the draft with Cedar Hollow.</h2><p>A synthetic dam keeps the workflow testable without making claims about a real owner.</p></div><button class="btn-primary" id="start-demo" type="button">Start clean preset</button></div>
-      <p class="demo-banner">Synthetic demonstration data. The public NID query below is live, but real records are never treated as evidence of noncompliance.</p>
-      <div class="console-shell" style="margin-top:16px"><div class="partner-shell" aria-live="polite">
-        <aside class="pane"><h3>Plan progress</h3><p class="small muted" id="progress-copy">Start the preset to create a durable workspace.</p><ol class="progress-list" id="progress-list"></ol><h3 class="subhead">Context meter</h3><div id="context-meter" class="muted small">No session yet.</div></aside>
+    <section id="workspace"><div class="wrap"><div class="console-intro"><div><p class="eyebrow">Interactive judge preset</p><h2>Build the draft with Cedar Hollow.</h2><p>A synthetic dam keeps the workflow testable without making claims about a real owner.</p></div><div class="workspace-actions"><button class="btn-primary" data-action id="start-demo" type="button">Start clean preset</button><a class="btn" href="/?guided=1#workspace">Start guided judge tour</a></div></div>
+      <p class="demo-banner">Synthetic demonstration data. The public NID query below is live, but real records are never treated as evidence of noncompliance.</p><div id="app-status" class="app-status neutral" role="status" aria-live="polite" aria-atomic="true">Choose a clean workspace or the guided judge tour to begin.</div>
+      <div class="console-shell" style="margin-top:16px"><div class="partner-shell">
+        <aside class="pane"><h3>Plan progress</h3><p class="small muted" id="progress-copy">Start the preset to create a durable workspace.</p><ol class="progress-list" id="progress-list"></ol><h3 class="subhead">Context meter</h3><div id="context-meter" class="muted small">No session yet.</div><div id="workspace-identity" class="workspace-identity" hidden><h3 class="subhead">Saved workspace</h3><code id="workspace-code"></code><p class="small muted">This link restores the Firestore-backed answers, revisions, and profile after a refresh.</p><div class="workspace-link-row"><a id="resume-url" href="#workspace">Open resume link</a><button id="copy-resume" type="button">Copy</button></div></div></aside>
         <section class="pane" style="padding:0;border:0;box-shadow:none;background:transparent"><article class="question-card" id="question-card"><span class="eyebrow">Partner waiting</span><h3>Start a clean preset.</h3><p>I will resolve three drawing facts first, turn the source conflict into a targeted question, and ask only what the fixture cannot answer.</p></article><article class="revision-card" id="revision-card"><span class="eyebrow">Correction loop</span><h3>Your corrections stay attributable.</h3><p class="muted small">After the first answer, revise it here. Downstream keeps both versions and updates the draft.</p></article></section>
-        <aside class="pane"><h3>Reviewable draft</h3><div class="plan-stack" id="plan-stack"><p class="muted small">Sections appear as owner facts arrive.</p></div><div class="btn-row"><button id="accept-plan" type="button" disabled>Accept style</button><button id="less-detail" type="button" disabled>Too much detail</button></div></aside>
+        <aside class="pane"><h3>Reviewable draft</h3><div class="plan-stack" id="plan-stack"><p class="muted small">Sections appear as owner facts arrive.</p></div><div class="btn-row"><button id="accept-plan" data-action type="button" disabled>Accept style</button><button id="less-detail" data-action type="button" disabled>Use concise summaries</button></div></aside>
       </div></div>
-      <div class="profile-grid" id="profile-grid" style="margin-top:14px"><div class="profile-item"><small>Reading level</small><b>Not learned yet</b></div><div class="profile-item"><small>Vocabulary</small><b>No preferences yet</b></div><div class="profile-item"><small>Sessions remembered</small><b>0</b></div><div class="profile-item"><small>Answer revisions</small><b>0</b></div><div class="profile-item"><small>Source conflicts surfaced</small><b>1</b></div></div>
+      <div class="profile-grid" id="profile-grid" style="margin-top:14px"><div class="profile-item"><small>Reading level</small><b>Not learned yet</b></div><div class="profile-item"><small>Detail style</small><b>Not learned yet</b></div><div class="profile-item"><small>Vocabulary</small><b>No preferences yet</b></div><div class="profile-item"><small>Sessions remembered</small><b>0</b></div><div class="profile-item"><small>Feedback events</small><b>0</b></div><div class="profile-item"><small>Answer revisions</small><b>0</b></div><div class="profile-item"><small>Source conflicts surfaced</small><b>1</b></div></div>
     </div></section>
 
     <section id="mapping"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">Mapping safety gate</p><h2>Useful enough to guide, disciplined enough to stop.</h2></div><p>The line is a documented flow-path input. It is deliberately not drawn as an area.</p></div>
@@ -63,6 +63,6 @@
       <div class="table-scroll"><table class="plain source-table"><thead><tr><th>Source</th><th>What it supports</th><th>Boundary</th></tr></thead><tbody><tr><td><a href="https://nid.sec.usace.army.mil/nid/">USACE National Inventory of Dams</a></td><td>Public inventory and live record fields</td><td>Inventory status is not structural condition or proof of compliance</td></tr><tr><td><a href="https://www.fema.gov/sites/default/files/2020-08/fema_dam-safety_emergency-action-planning_P-64.pdf">FEMA P-64</a></td><td>EAP purpose, roles, and typical contents</td><td>Federal guidance does not replace state requirements</td></tr><tr><td><a href="https://damsafety.org/dam-owners/emergency-action-planning">ASDSO Emergency Action Planning</a></td><td>Owner collaboration and notification planning</td><td>State review and emergency-manager coordination remain necessary</td></tr><tr><td><a href="https://www.damsafety.org/sites/default/files/files/EAPWG%20Final%20SIMS.pdf">SIMS methodology</a></td><td>When simplified mapping may be applicable</td><td>Not a substitute for engineering judgment or regulatory compliance</td></tr></tbody></table></div>
     </div></section>
   </main>
-  <footer class="site"><div class="wrap"><div class="footer-links"><a href="/judges">Judge notes</a><a href="/downstream/conformance">Conformance evidence</a><a href="/downstream/proof">Executable safety proof</a><a href="/downstream/bonus">Gemma privacy evidence</a><a href="/docs">API</a></div><p>Downstream is an independent hackathon prototype. It is not affiliated with or endorsed by USACE, FEMA, ASDSO, or any state agency. No agency seals are used.</p></div></footer>
+  <footer class="site"><div class="wrap"><div class="footer-links"><a href="/judges">Judge notes</a><a href="/evidence">Evidence dashboard</a><a href="/downstream/conformance">Raw conformance JSON</a><a href="/downstream/proof">Raw safety proof</a><a href="/downstream/bonus">Raw Gemma evidence</a><a href="/docs">API</a></div><p>Downstream is an independent hackathon prototype. It is not affiliated with or endorsed by USACE, FEMA, ASDSO, or any state agency. No agency seals are used.</p></div></footer>
   <script src="/static/downstream-v2.js" defer></script>
 </body></html>

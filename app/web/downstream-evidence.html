@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en" data-project="downstream">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Human-readable executable evidence for the Downstream collaborative planning partner.">
+  <title>Downstream | Evidence dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/downstream.css">
+  <link rel="stylesheet" href="/static/downstream-v2.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site"><div class="wrap bar">
+    <div class="brand">Downstream <span>Evidence dashboard</span></div>
+    <nav aria-label="Primary"><a href="/">Product</a><a href="/?guided=1#workspace">Guided demo</a><a href="/judges">Judge notes</a><a href="/docs">API</a></nav>
+    <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch color theme" aria-pressed="false">Dark mode</button>
+  </div></header>
+  <main id="main">
+    <section class="judge-hero"><div class="wrap">
+      <p class="eyebrow">Live evaluation evidence</p>
+      <h1>The claims are readable and executable.</h1>
+      <p class="lede">This page runs the public safety proof, loads the category mapping, shows measured Gemini extraction, and checks the recorded Gemma privacy layer. Raw responses remain available beside each summary.</p>
+      <div class="evaluator-actions"><a href="/?guided=1#workspace">Run guided workflow</a><a href="/judges">Open five-minute judge path</a><a href="https://github.com/usv240/downstream">Inspect repository</a></div>
+      <div id="evidence-status" class="app-status working" role="status" aria-live="polite" aria-atomic="true">Loading executable evidence.</div>
+    </div></section>
+
+    <section id="proof"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">Safety and grounding</p><h2>Executable proof</h2></div><a href="/downstream/proof">Raw JSON</a></div>
+      <div class="evidence-panel wide">
+        <div class="evidence-result"><strong id="proof-score">Loading</strong><span>checks passing</span></div>
+        <ul class="check-list" id="proof-checks"><li>Running the public proof endpoint.</li></ul>
+      </div>
+    </div></section>
+
+    <section id="category"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">Rules traceability</p><h2>Collaborative Partner conformance</h2></div><a href="/downstream/conformance">Raw JSON</a></div>
+      <div class="evidence-grid" id="conformance-grid"><article class="evidence-panel"><h3>Loading category evidence</h3></article></div>
+    </div></section>
+
+    <section id="models"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">Measured model evidence</p><h2>Gemini extraction and Gemma privacy</h2></div><p>Recorded outputs are stored beside synthetic truth and scored in public.</p></div>
+      <div class="evidence-grid">
+        <article class="evidence-panel"><img class="fixture-image" src="/downstream/fixtures/drawing/image" alt="Synthetic Cedar Hollow dam drawing used for the measured Gemini extraction"><h3>Gemini drawing extraction</h3><div class="evidence-result"><strong id="drawing-score">Loading</strong><span>measured checks</span></div><p id="drawing-note" class="muted">Loading recorded extraction evidence.</p><a href="/downstream/fixtures/drawing">Raw recording and truth</a></article>
+        <article class="evidence-panel"><h3>Gemma privacy replay</h3><div class="evidence-result"><strong id="gemma-score">Loading</strong><span>identifiers found</span></div><p id="gemma-note" class="muted">Loading recorded privacy evidence.</p><a href="/downstream/bonus">Raw privacy evidence</a></article>
+      </div>
+    </div></section>
+
+    <section><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">Reproduce it</p><h2>Three ways to verify</h2></div></div>
+      <div class="grid-3">
+        <article class="card"><h3>Use the guided interface</h3><p>Use a synthetic answer at each step, rephrase one question, hold and reopen another, then save a correction.</p><a href="/?guided=1#workspace">Start guided demo</a></article>
+        <article class="card"><h3>Run the public flow</h3><p>The repository includes the same 26-check rehearsal used against this deployment.</p><code>python scripts/downstream_demo_flow.py --url &lt;service-url&gt;</code></article>
+        <article class="card"><h3>Run locally</h3><p>The standalone suite needs no cloud credentials and isolates itself from unrelated machine plugins.</p><code>python -m pytest -q</code></article>
+      </div>
+    </div></section>
+  </main>
+  <footer class="site"><div class="wrap"><div class="footer-links"><a href="/">Product</a><a href="/judges">Judge notes</a><a href="/downstream/proof">Raw proof</a><a href="/docs">API</a></div><p>Independent synthetic prototype. No agency affiliation, endorsement, seal, or production safety claim.</p></div></footer>
+  <script src="/static/downstream-evidence.js" defer></script>
+</body>
+</html>

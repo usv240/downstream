@@ -21,16 +21,17 @@ insufficient.
 4. Surface the drawing and registry height conflict instead of silently merging it.
 5. Create a durable Firestore workspace.
 6. Ask five owner questions one at a time, then create a sixth targeted clarification when retrieved sources conflict.
-7. Capture unknown terms, accept, edit, skip, and not-right feedback in an inspectable profile.
+7. Capture unknown terms, accept, edit, held-question recovery, and not-right feedback in an inspectable profile.
 8. Compose plan sections from structured facts and source-bearing requirements.
 9. Refuse to render an inundation boundary because applicability, jurisdiction, and reference-map
    comparison are unproven.
-10. Present the result as a draft for qualified review, never approval or submission.
+10. Preserve a shareable workspace URL across refreshes and present raw proof through a human-readable evidence dashboard.
+11. Present the result as a draft for qualified review, never approval or submission.
 
 ## Acceptance gates
 
-- 185 tests green.
-- 24/24 executable demo checks green.
+- 191 tests green.
+- 26/26 executable demo checks green.
 - WCAG 2.2 AA token checks green in light and dark themes.
 - Gemini drawing record graded 5/5 against adjacent synthetic truth.
 - No endpoint can approve, certify, submit, or order evacuation.

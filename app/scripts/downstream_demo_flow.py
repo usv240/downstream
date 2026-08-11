@@ -122,6 +122,26 @@ def main() -> int:
     )
     workspace = api.call(
         "POST",
+        f"/downstream/workspaces/{workspace_id}/skip",
+        {"question_id": conflict["id"]},
+    )
+    check(
+        "dynamic source conflict can be held without losing prior answers",
+        workspace["next_question"] is None
+        and workspace["progress"]["skipped"] == 1
+        and len(workspace["answers"]) == 5,
+    )
+    workspace = api.call(
+        "POST", f"/downstream/workspaces/{workspace_id}/resume", {}
+    )
+    conflict = workspace["next_question"]
+    check(
+        "new session reopens the held source conflict",
+        conflict["id"] == "resolve_dam_height_conflict"
+        and workspace["progress"]["skipped"] == 0,
+    )
+    workspace = api.call(
+        "POST",
         f"/downstream/workspaces/{workspace_id}/answer",
         {
             "question_id": conflict["id"],

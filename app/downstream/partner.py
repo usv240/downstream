@@ -256,8 +256,11 @@ def revise_answer(
 
 
 def skip_question(workspace: dict[str, Any], question_id: str) -> dict[str, Any]:
-    if question_id not in {q["id"] for q in QUESTION_BANK}:
+    valid_ids = {q["id"] for q in questions_for(workspace, QUESTION_BANK)}
+    if question_id not in valid_ids:
         raise ValueError("unknown question")
+    if question_id in workspace["answers"]:
+        raise ValueError("question already answered")
     if question_id not in workspace["skipped"]:
         workspace["skipped"].append(question_id)
     workspace["updated_at"] = utc_now()
@@ -293,7 +296,11 @@ def record_feedback(
 
 
 def resume(workspace: dict[str, Any]) -> dict[str, Any]:
-    workspace["sessions"].append({"opened_at": utc_now(), "answers": 0})
+    reopened = list(workspace["skipped"])
+    workspace["skipped"].clear()
+    workspace["sessions"].append(
+        {"opened_at": utc_now(), "answers": 0, "reopened_questions": reopened}
+    )
     workspace["updated_at"] = utc_now()
     return workspace
 
