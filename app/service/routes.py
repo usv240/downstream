@@ -142,6 +142,10 @@ def build_router(store: WorkspaceStore) -> APIRouter:
     ) -> dict[str, Any]:
         try:
             result = search_high_hazard_unreported(limit=limit, state=state)
+        except ValueError as exc:
+            # A caller mistake is not a federal outage. Falling through to the fallback here
+            # would answer a question the caller did not ask and hide their error.
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         except Exception:  # external public endpoint; return an explicit safe fallback
             result = fallback_records()
         return {
