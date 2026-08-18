@@ -30,7 +30,7 @@ def test_frontend_makes_adaptation_and_evidence_visible():
 def test_judge_page_states_measured_gates_and_has_no_mojibake():
     html = (WEB / "downstream-judges-v2.html").read_text(encoding="utf-8")
     for evidence in (
-        "191",
+        "208",
         "26/26",
         "Versioned owner correction",
         "Section evidence ledger",

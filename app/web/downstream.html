@@ -15,7 +15,7 @@
     <div class="wrap bar">
       <div class="brand">Downstream <span>Emergency planning, built together</span></div>
       <nav aria-label="Primary">
-        <a href="#why">Why it matters</a><a href="#workspace">Try the partner</a><a href="#mapping">Safety gate</a><a href="#research">Sources</a><a href="/developer">Developer API</a><a href="/evidence">Evidence</a><a href="/judges">Judge notes</a>
+        <a href="#why">Overview</a><a href="#workspace">Live demo</a><a href="/developer">Developer API</a><a href="/docs">API docs</a><a href="/judges">Judge evidence</a>
       </nav>
       <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch color theme" aria-pressed="false">Dark mode</button>
     </div>
@@ -24,7 +24,8 @@
     <section class="hero"><div class="wrap hero-layout"><div class="hero-copy">
       <p class="eyebrow">The Collaborative Partner</p><h1>A plan no owner should have to write alone.</h1>
       <p class="lede">Downstream combines public dam records, reviewable document facts, and the knowledge only an owner has. It asks one useful question at a time, remembers across sessions, and assembles a cited Emergency Action Plan draft for qualified review.</p>
-      <div class="btn-row"><a class="btn btn-primary" href="#workspace">Open the judge preset</a><a class="btn" href="/evidence#proof">Open the evidence dashboard</a></div>
+      <div class="btn-row"><a class="btn btn-primary" href="/?guided=1#workspace">Run the guided demo</a><a class="btn" href="/judges">Follow the judge path</a></div>
+      <p class="hero-tertiary">The public workspace needs no key. Building an integration? <a href="/developer">Create an invited API key</a> or <a href="/docs">inspect the API docs</a>.</p>
       <p class="boundary-line"><b>Boundary:</b> this demo never generates an inundation boundary, evacuation zone, certification, or submission. It produces a synthetic draft and a documented safe stop.</p>
     </div><aside class="hero-proof" aria-label="Measured public-data snapshot">
       <span class="proof-label">USACE NID snapshot, measured Aug 11, 2026</span><strong class="proof-value">92,606</strong><span>public dam records queried through the official FeatureServer</span>
@@ -53,6 +54,16 @@
       <div class="profile-grid" id="profile-grid" style="margin-top:14px"><div class="profile-item"><small>Reading level</small><b>Not learned yet</b></div><div class="profile-item"><small>Detail style</small><b>Not learned yet</b></div><div class="profile-item"><small>Vocabulary</small><b>No preferences yet</b></div><div class="profile-item"><small>Sessions remembered</small><b>0</b></div><div class="profile-item"><small>Feedback events</small><b>0</b></div><div class="profile-item"><small>Answer revisions</small><b>0</b></div><div class="profile-item"><small>Source conflicts surfaced</small><b>1</b></div></div>
     </div></section>
 
+    <section id="api" class="integration-section"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">Use it beyond the demo</p><h2>A tenant-private planning API, explained before credentials.</h2></div><p>The public Cedar Hollow preset is the fastest evaluation path. The API opens private workspaces from exact public USACE NID records.</p></div>
+      <div class="api-onboarding-grid">
+        <article class="path-card"><span class="path-number">No credentials</span><h3>Evaluate publicly</h3><p>Run the guided synthetic workflow, hold and reopen a gap, revise an answer, and inspect the evidence ledger.</p><a href="/?guided=1#workspace">Run the guided demo</a></article>
+        <article class="path-card"><span class="path-number">Invited access</span><h3>Create a seven-day key</h3><p>A private invitation code unlocks key creation. The separate API key owns a tenant-private workspace.</p><a href="/developer">Open Developer quickstart</a></article>
+        <article class="path-card"><span class="path-number">Exact contract</span><h3>Read the API docs</h3><p>Use the interactive schema to authorize with X-API-Key and inspect workspace, answer, revision, feedback, and resume operations.</p><a href="/docs">Browse API docs</a></article>
+      </div>
+      <p class="integration-boundary"><b>API boundary:</b> screening and drafting support only. No engineering-grade inundation extent, certification, approval, or submission.</p>
+    </div></section>
+
     <section id="mapping"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">Mapping safety gate</p><h2>Useful enough to guide, disciplined enough to stop.</h2></div><p>The line is a documented flow-path input. It is deliberately not drawn as an area.</p></div>
       <div class="grid-3" style="grid-template-columns:1.4fr .6fr"><div class="map-frame" role="img" aria-label="Diagram showing a dam and a single downstream flow path, not an inundation area"><svg viewBox="0 0 760 350" aria-hidden="true"><path d="M0 82 C180 38 340 122 760 52 L760 0 L0 0 Z" fill="#d7e5d3" opacity=".75"/><path d="M0 300 C160 250 270 330 430 275 C560 230 650 275 760 240 L760 350 L0 350 Z" fill="#d4e1d5"/><path d="M215 78 C225 136 305 151 332 205 C366 270 492 243 577 313" fill="none" stroke="#2d7191" stroke-width="8" stroke-linecap="round"/><path d="M174 95 L270 67" fill="none" stroke="#4b5965" stroke-width="12" stroke-linecap="round"/><path d="M510 245 L687 197" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".88"/><path d="M510 245 L687 197" fill="none" stroke="#74808c" stroke-width="2" stroke-dasharray="10 8"/><circle cx="216" cy="82" r="8" fill="#a33131"/></svg><span class="map-label dam">Synthetic dam</span><span class="map-label road">County road input</span></div>
       <div><div class="safe-stop"><b aria-hidden="true">!</b><div><h3>Boundary withheld</h3><p>No approved map was supplied. Method applicability, jurisdictional acceptance, and reference comparison are unproven. Downstream refuses to invent an extent.</p></div></div><div class="card" style="margin-top:14px"><h3>Next safe action</h3><p class="small muted">Request an approved map or route this section to the state dam-safety office or a qualified engineer.</p></div></div></div>
@@ -63,6 +74,6 @@
       <div class="table-scroll"><table class="plain source-table"><thead><tr><th>Source</th><th>What it supports</th><th>Boundary</th></tr></thead><tbody><tr><td><a href="https://nid.sec.usace.army.mil/nid/">USACE National Inventory of Dams</a></td><td>Public inventory and live record fields</td><td>Inventory status is not structural condition or proof of compliance</td></tr><tr><td><a href="https://www.fema.gov/sites/default/files/2020-08/fema_dam-safety_emergency-action-planning_P-64.pdf">FEMA P-64</a></td><td>EAP purpose, roles, and typical contents</td><td>Federal guidance does not replace state requirements</td></tr><tr><td><a href="https://damsafety.org/dam-owners/emergency-action-planning">ASDSO Emergency Action Planning</a></td><td>Owner collaboration and notification planning</td><td>State review and emergency-manager coordination remain necessary</td></tr><tr><td><a href="https://www.damsafety.org/sites/default/files/files/EAPWG%20Final%20SIMS.pdf">SIMS methodology</a></td><td>When simplified mapping may be applicable</td><td>Not a substitute for engineering judgment or regulatory compliance</td></tr></tbody></table></div>
     </div></section>
   </main>
-  <footer class="site"><div class="wrap"><div class="footer-links"><a href="/judges">Judge notes</a><a href="/evidence">Evidence dashboard</a><a href="/downstream/conformance">Raw conformance JSON</a><a href="/downstream/proof">Raw safety proof</a><a href="/downstream/bonus">Raw Gemma evidence</a><a href="/developer">Developer API</a><a href="/docs">Reference</a></div><p>Downstream is an independent hackathon prototype. It is not affiliated with or endorsed by USACE, FEMA, ASDSO, or any state agency. No agency seals are used.</p></div></footer>
+  <footer class="site"><div class="wrap"><div class="footer-links"><a href="/judges">Judge notes</a><a href="/evidence">Evidence dashboard</a><a href="/downstream/conformance">Raw conformance JSON</a><a href="/downstream/proof">Raw safety proof</a><a href="/downstream/bonus">Raw Gemma evidence</a><a href="/developer">Developer API</a><a href="/docs">API docs</a></div><p>Downstream is an independent hackathon prototype. It is not affiliated with or endorsed by USACE, FEMA, ASDSO, or any state agency. No agency seals are used.</p></div></footer>
   <script src="/static/downstream-v2.js" defer></script>
 </body></html>
