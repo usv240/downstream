@@ -100,9 +100,14 @@ from a live USACE National Inventory of Dams identifier, then supports the same 
 hold, feedback, and resume loop. The server derives the tenant from `X-API-Key`; workspace IDs
 from another key return 404 even if guessed.
 
-Full provisioning and rotation instructions are in [the beta API guide](docs/api-beta.md).
+Full provisioning, expiry, and rotation instructions are in [the beta API guide](docs/api-beta.md).
 
-Create a key:
+Invited developers can open [the live Developer page](https://downstream-109051079423.us-central1.run.app/developer), enter the invitation
+code supplied by the project owner, and generate a tenant-scoped key that expires after seven days.
+The plaintext key is shown once and remains only in page memory. The page includes a connection
+test, a copyable project request, immediate revocation, and a link to the interactive OpenAPI schema.
+
+Operators can also create a non-expiring key through Secret Manager:
 
 ```bash
 cd app
@@ -155,7 +160,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 204 tests, accessibility green in both themes, and 26/26 demo checks.
+Current verified result: 208 tests, accessibility green in both themes, and 26/26 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:
