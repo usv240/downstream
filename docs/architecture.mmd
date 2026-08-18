@@ -1,12 +1,16 @@
 flowchart LR
-    NID[USACE NID FeatureServer] --> R[Registry reader]
+    API[Approved API client] --> K[Hash-only API key and server-derived tenant]
+    K --> R[Live NID record lookup]
+    NID[USACE NID FeatureServer] --> R
+    J[Public synthetic judge console] --> FACTS[Provenance-bearing facts]
     IMG[Synthetic legacy drawing] --> G[Vertex AI Gemini 3.5 Flash]
     G --> Q[Transcription and quote gate]
-    R --> FACTS[Provenance-bearing facts]
+    R --> FACTS
     Q --> FACTS
     FACTS --> X{Sources conflict?}
     X -->|yes| P[Targeted clarification]
-    X -->|no| DB[(Firestore workspace)]
+    X -->|no| DB[(Tenant-owned Firestore workspace)]
+    K --> P
     OWNER[Owner, many short sessions] <--> P
     P --> H[Versioned answer history]
     H <--> DB
@@ -19,5 +23,5 @@ flowchart LR
     MAP[Mapping applicability gate] -->|unproven| STOP[Safe stop, flow path only]
     STOP --> L
     L --> DRAFT[Reviewable EAP draft]
-    DRAFT --> UI[Accessible Cloud Run web app]
+    DRAFT --> UI[Accessible Cloud Run web app and API]
     UI -->|owner correction| P

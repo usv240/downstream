@@ -106,6 +106,35 @@ def search_high_hazard_unreported(
     )
 
 
+def lookup_nid_record(nid_id: str, timeout: float = 8.0) -> NIDResult:
+    """Fetch one public NID record by its literal identifier."""
+    clean = nid_id.strip().upper()
+    if not clean or len(clean) > 20 or not all(c.isalnum() or c in "-_" for c in clean):
+        raise ValueError("nid_id must contain only letters, numbers, hyphen, or underscore")
+    params = {
+        "where": "NIDID='" + clean.replace("'", "''") + "'",
+        "outFields": PUBLIC_FIELDS,
+        "returnGeometry": "false",
+        "resultRecordCount": "1",
+        "f": "json",
+    }
+    url = f"{NID_LAYER}/query?{urllib.parse.urlencode(params)}"
+    request = urllib.request.Request(url, headers={"User-Agent": "Downstream/1.0"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if payload.get("error"):
+        raise RuntimeError(payload["error"].get("message", "NID query failed"))
+    rows = [feature.get("attributes", {}) for feature in payload.get("features", [])]
+    return NIDResult(
+        records=rows,
+        source_url=url,
+        live=True,
+        interpretation=(
+            "This is a current public inventory record. Hazard potential describes downstream "
+            "consequences, not the condition of the dam or probability of failure."
+        ),
+    )
+
 def fallback_records() -> NIDResult:
     """A labelled fallback keeps the demo understandable during a federal endpoint outage."""
     return NIDResult(

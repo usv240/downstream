@@ -37,3 +37,25 @@ class FirestoreWorkspaceStore:
     def get(self, workspace_id: str) -> dict[str, Any] | None:
         snapshot = self._collection.document(workspace_id).get()
         return snapshot.to_dict() if snapshot.exists else None
+
+class ScopedWorkspaceStore:
+    """Tenant-enforcing view over a workspace store.
+
+    The tenant comes from the API key, never from request JSON. A guessed workspace ID returns
+    no result unless it belongs to the caller's tenant.
+    """
+
+    def __init__(self, store: WorkspaceStore, tenant_id: str) -> None:
+        self._store = store
+        self._tenant_id = tenant_id
+
+    def put(self, workspace: dict[str, Any]) -> None:
+        owned = copy.deepcopy(workspace)
+        owned["_tenant_id"] = self._tenant_id
+        self._store.put(owned)
+
+    def get(self, workspace_id: str) -> dict[str, Any] | None:
+        workspace = self._store.get(workspace_id)
+        if workspace is None or workspace.get("_tenant_id") != self._tenant_id:
+            return None
+        return workspace

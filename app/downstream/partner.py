@@ -124,7 +124,11 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def create_workspace() -> dict[str, Any]:
+def create_workspace(
+    *,
+    dam: dict[str, Any] | None = None,
+    facts: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     mapping = mapping_gate(
         approved_map_supplied=False,
         method_applicable=False,
@@ -135,8 +139,8 @@ def create_workspace() -> dict[str, Any]:
         "workspace_id": f"eap_{uuid.uuid4().hex[:12]}",
         "created_at": utc_now(),
         "updated_at": utc_now(),
-        "dam": copy.deepcopy(DEMO_DAM),
-        "facts": copy.deepcopy(DRAWING_FACTS),
+        "dam": copy.deepcopy(dam if dam is not None else DEMO_DAM),
+        "facts": copy.deepcopy(facts if facts is not None else DRAWING_FACTS),
         "answers": {},
         "asked": [],
         "skipped": [],

@@ -40,27 +40,31 @@ category, Gemini, and Gemma evidence dashboard.
 
 ```mermaid
 flowchart LR
-    NID[USACE NID FeatureServer] --> R[Registry reader]
+    API[Approved API client] --> K[Hash-only API key and server-derived tenant]
+    K --> R[Live NID record lookup]
+    NID[USACE NID FeatureServer] --> R
+    J[Public synthetic judge console] --> FACTS[Provenance-bearing facts]
     IMG[Synthetic legacy drawing] --> G[Vertex AI Gemini 3.5 Flash]
     G --> Q[Transcription and quote gate]
-    R --> FACTS[Provenance-bearing facts]
+    R --> FACTS
     Q --> FACTS
     FACTS --> X{Sources conflict?}
     X -->|yes| P[Targeted clarification]
-    X -->|no| DB[(Firestore workspace)]
+    X -->|no| DB[(Tenant-owned Firestore workspace)]
+    K --> P
     OWNER[Owner, many short sessions] <--> P
     P --> H[Versioned answer history]
     H <--> DB
     DB --> M[Bounded memory and profile]
     M --> P
     DB --> C[Section composer]
-    REQ[FEMA and ASDSO requirement passages] --> V[Verifier]
+    REQ[FEMA and ASDSO passages] --> V[Verifier]
     C --> V
     V --> L[Section evidence ledger]
     MAP[Mapping applicability gate] -->|unproven| STOP[Safe stop, flow path only]
     STOP --> L
     L --> DRAFT[Reviewable EAP draft]
-    DRAFT --> UI[Accessible Cloud Run web app]
+    DRAFT --> UI[Accessible Cloud Run web app and API]
     UI -->|owner correction| P
 ```
 
@@ -89,6 +93,42 @@ Primary sources:
 
 Full claim-by-claim notes are in `docs/research-traceability.md`.
 
+## Use it through the API
+
+The judge preset stays public and synthetic. The protected `/v1` API opens a private workspace
+from a live USACE National Inventory of Dams identifier, then supports the same answer, revise,
+hold, feedback, and resume loop. The server derives the tenant from `X-API-Key`; workspace IDs
+from another key return 404 even if guessed.
+
+Full provisioning and rotation instructions are in [the beta API guide](docs/api-beta.md).
+
+Create a key:
+
+```bash
+cd app
+python scripts/create_beta_key.py --tenant owner_one --label "Owner one"
+```
+
+Store the printed hash-only JSON as the `BETA_API_KEY_HASHES` Secret Manager value and expose it
+to Cloud Run. The plaintext key is shown once and must not be committed or embedded in frontend
+JavaScript.
+
+```bash
+curl -H "X-API-Key: $DOWNSTREAM_API_KEY" \
+  https://downstream-109051079423.us-central1.run.app/v1
+
+curl -X POST \
+  -H "X-API-Key: $DOWNSTREAM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"nid_id":"IA00001"}' \
+  https://downstream-109051079423.us-central1.run.app/v1/workspaces
+```
+
+Open `/docs`, select **Authorize**, and enter the key to explore every protected operation.
+The API starts from an authoritative public inventory row rather than caller-supplied dam facts.
+It still produces a reviewable draft only. It does not create an inundation extent, certify a plan,
+make a condition assessment, predict failure, contact an agency, or submit anything.
+
 ## Run locally
 
 Requirements: Python 3.12 or newer.
@@ -115,7 +155,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 195 tests, accessibility green in both themes, and 26/26 demo checks.
+Current verified result: 204 tests, accessibility green in both themes, and 26/26 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:

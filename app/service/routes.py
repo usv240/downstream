@@ -57,7 +57,7 @@ def build_router(store: WorkspaceStore) -> APIRouter:
 
     def require(workspace_id: str) -> dict[str, Any]:
         workspace = store.get(workspace_id)
-        if workspace is None:
+        if workspace is None or workspace.get("_tenant_id") is not None:
             raise HTTPException(status_code=404, detail=f"no workspace {workspace_id}")
         return workspace
 

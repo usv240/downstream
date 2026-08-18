@@ -12,6 +12,8 @@ from fastapi.staticfiles import StaticFiles
 
 from downstream.store import FirestoreWorkspaceStore, MemoryWorkspaceStore
 from service.routes import build_router
+from service.beta_routes import build_beta_router
+from spine.api_access import ApiKeyAuthenticator
 
 PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", "local")
 USE_FIRESTORE = os.environ.get("USE_FIRESTORE", "").lower() in {"1", "true", "yes"}
@@ -31,6 +33,8 @@ app = FastAPI(
     version="0.1.0",
 )
 app.include_router(build_router(workspace_store))
+beta_auth = ApiKeyAuthenticator.from_environment()
+app.include_router(build_beta_router(workspace_store, beta_auth))
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 app.mount("/static", StaticFiles(directory=WEB), name="static")
@@ -45,6 +49,7 @@ def health() -> dict[str, Any]:
         "persistence": persistence,
         "synthetic_demo": True,
         "inundation_extent": "not_generated",
+        "beta_api": "configured" if beta_auth.enabled else "not_provisioned",
     }
 
 
