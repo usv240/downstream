@@ -54,20 +54,6 @@
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, .28);
 }
 
-:root[data-project="sixty-days"] {
-  --accent: #00666d;
-  --accent-strong: #00474c;
-  --accent-soft: #e3f3f3;
-  --focus: #00666d;
-}
-
-:root[data-project="sixty-days"][data-theme="dark"] {
-  --accent: #75cbd0;
-  --accent-strong: #a2e0e3;
-  --accent-soft: #123033;
-  --focus: #75cbd0;
-}
-
 *, *::before, *::after { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }

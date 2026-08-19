@@ -10,6 +10,5 @@ It owns:
   kit;
 - its own Git history, public GitHub repository, Cloud Run service, hosted URL, category, and video.
 
-It does not share a public route or deployment with Day Three or Sixty Days. The shared spine is an
-explicit common substrate, while the user, domain workflow, state, evidence, interface, category,
-and output are substantially different.
+The repository owns its public routes, deployment, domain workflow, state, evidence, interface,
+category, and output. Its reviewed runtime substrate is included in full.

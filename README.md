@@ -160,7 +160,7 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 208 tests, accessibility green in both themes, and 26/26 demo checks.
+Current verified result: 211 tests, accessibility green in both themes, and 26/26 demo checks.
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:
@@ -181,9 +181,8 @@ export GOOGLE_CLOUD_PROJECT=your-project-id
 bash deploy.sh
 ```
 
-The deployment script creates a separate `downstream` Cloud Run service, permits public judge
-access, and enables Firestore persistence. It does not share a URL or deployment with Day Three or
-Sixty Days.
+The deployment script creates the `downstream` Cloud Run service, permits public judge access, and
+enables Firestore persistence. The repository owns its public URL and deployment configuration.
 
 ## Safety and provenance
 

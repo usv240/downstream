@@ -110,7 +110,7 @@ def main() -> int:
 
     print("First-use navigation and developer journey\n")
     landing_path = next(
-        (WEB / name for name in ("index.html", "sixty-days.html", "downstream.html")
+        (WEB / name for name in ("downstream.html",)
          if (WEB / name).exists()),
         None,
     )
