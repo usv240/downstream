@@ -7,6 +7,7 @@ that every failure mode falls back rather than 500s, and that the fallback is ne
 a live call.
 """
 
+import pathlib
 from datetime import datetime, timezone
 
 
@@ -139,11 +140,27 @@ def test_the_mode_string_matches_what_the_service_will_actually_do():
     assert DrawingService(project="p", live_enabled=False).mode == "recorded_replay_only"
 
 
-def test_live_inference_stays_off_without_an_explicit_opt_in(monkeypatch):
+def test_live_inference_is_on_unless_someone_deliberately_turns_it_off(monkeypatch):
+    """Gemini 3.5 is mandatory for this submission, so omission must not silently remove it.
+
+    This defaulted to off once, as cost control, and the deployed service performed no inference
+    at all while the pages implied otherwise. A daily cap bounds the spend; the default does not.
+    """
     monkeypatch.delenv("DOWNSTREAM_LIVE_MODEL", raising=False)
-    assert DrawingService.from_environment("real-project").live_enabled is False
-    monkeypatch.setenv("DOWNSTREAM_LIVE_MODEL", "true")
     assert DrawingService.from_environment("real-project").live_enabled is True
+    for truthy in ("true", "1", "yes", "TRUE", ""):
+        monkeypatch.setenv("DOWNSTREAM_LIVE_MODEL", truthy)
+        assert DrawingService.from_environment("real-project").live_enabled is True, truthy
+    for falsy in ("false", "0", "no", "off", "FALSE"):
+        monkeypatch.setenv("DOWNSTREAM_LIVE_MODEL", falsy)
+        assert DrawingService.from_environment("real-project").live_enabled is False, falsy
+
+
+def test_the_deploy_script_cannot_ship_the_mandated_model_switched_off():
+    deploy = (pathlib.Path(__file__).resolve().parents[1] / "deploy.sh").read_text(encoding="utf-8")
+    assert 'LIVE_MODEL="${DOWNSTREAM_LIVE_MODEL:-true}"' in deploy, (
+        "the deploy default must be true; Gemini 3.5 is mandatory"
+    )
 
 
 def test_live_inference_never_switches_on_for_the_local_placeholder_project(monkeypatch):

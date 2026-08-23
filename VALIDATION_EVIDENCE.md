@@ -48,15 +48,17 @@ The context meter previously computed `410 + min(260, …)` against a bound of 6
 Budget is 900 tokens. `/downstream/proof` includes a check that deliberately overloads one answer
 and asserts the meter reports the breach, so the measurement is capable of failing.
 
-## What is not on in the deployed configuration
+## What is and is not running in the deployed configuration
 
-- **Live Gemini inference** is behind `DOWNSTREAM_LIVE_MODEL` and defaults to off, so a
-  deployment cannot start spending without someone choosing to. With it off the service replays
-  the graded recording and `/stack` reports Gemini as **not** in the request path. With it on the
-  call is real, capped at 25 per day, and falls back to the recording on any Vertex error.
+- **Live Gemini inference is ON.** Opening a workspace makes a real Vertex AI Gemini 3.5 Flash
+  multimodal call; the facts it returns carry `live_gemini_3_5_flash` provenance and `/health`
+  reports `live_with_replay_fallback`. It is capped at 25 calls per day and falls back to the
+  graded recording past the cap or on any Vertex error, so a model outage degrades the evidence
+  rather than the product. The switch is `DOWNSTREAM_LIVE_MODEL`, which defaults to off so a
+  fresh deployment cannot start spending before someone chooses to.
 - **Gemma 4** is a graded recording in every configuration. `/stack` never reports it as live.
-- **Cloud Trace** exports only when the exporter is available in the environment; `/health` and
-  `/stack` report `inactive` otherwise.
+- **Cloud Trace** is exporting; `/health` reports `cloud_trace`. Without the exporter it degrades
+  to no tracing and reports `inactive` rather than claiming otherwise.
 
 `/stack` is derived from the running process, so the badge on every page cannot claim a service
 the deployment does not have.

@@ -9,9 +9,11 @@ BETA_ENROLLMENT_SECRET="${BETA_ENROLLMENT_SECRET:-}"
 # Secret Manager names for the scheduler trigger and the quota fingerprint pepper.
 SCHEDULER_TOKEN_SECRET="${SCHEDULER_TOKEN_SECRET:-}"
 QUOTA_PEPPER_SECRET="${QUOTA_PEPPER_SECRET:-}"
-# Live Gemini inference in the request path. Off by default so a deployment cannot start
-# spending without someone choosing to; the service replays its graded recording instead.
-LIVE_MODEL="${DOWNSTREAM_LIVE_MODEL:-false}"
+# Live Gemini inference in the request path. ON by default: Gemini 3.5 is mandatory for this
+# submission, so a deployment must not be able to ship without it by omission. Spend is
+# bounded by QUOTA_LIVE_MODEL_CALLS_PER_DAY, and every call past the cap or after a Vertex
+# error falls back to the graded recording rather than failing.
+LIVE_MODEL="${DOWNSTREAM_LIVE_MODEL:-true}"
 # Key issuance. "open" lets a judge self-serve; "invite_only" requires BETA_ENROLLMENT_SECRET.
 ISSUANCE_MODE="${DEVELOPER_ISSUANCE_MODE:-open}"
 
@@ -85,7 +87,7 @@ Deployed. Two follow-ups if this is a fresh project.
 
    Without INTERNAL_SCHEDULER_TOKEN set, that route returns 503 rather than running open.
 
-2. Live inference. Set DOWNSTREAM_LIVE_MODEL=true to put Gemini 3.5 Flash in the request path.
-   It is capped by QUOTA_LIVE_MODEL_CALLS_PER_DAY (25 by default) and falls back to the graded
-   recording past the cap or on any Vertex error.
+2. Live inference is ON. Gemini 3.5 Flash is called in the request path, capped by
+   QUOTA_LIVE_MODEL_CALLS_PER_DAY (25 by default), falling back to the graded recording past
+   the cap or on any Vertex error. Check /health: it must report live_with_replay_fallback.
 NOTE

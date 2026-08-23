@@ -34,9 +34,11 @@ actually using.
   questions the owner held for later and records a follow-up on an incomplete draft. Cloud
   Scheduler calls `/internal/scan-due`; wakes claim once by compare-and-swap, retry a bounded
   number of times, and dead-letter rather than looping.
-- Real Gemini 3.5 Flash multimodal extraction from a synthetic 1958-style drawing, recorded and
-  graded 5/5 against adjacent truth. With `DOWNSTREAM_LIVE_MODEL=true` the call happens in the
-  request path, capped daily and falling back to the graded recording on any error.
+- **Live Gemini 3.5 Flash multimodal extraction, in the request path.** Opening a workspace on the
+  deployed service makes a real Vertex AI call against a synthetic 1958-style drawing, and the
+  facts it returns carry `live_gemini_3_5_flash` provenance. The same call was recorded once and
+  graded 5/5 against adjacent truth; that recording is the fallback past the daily cap or on any
+  Vertex error. `/health` and `/stack` report which of the two actually happened.
 - Gemma 4 MaaS reviews synthetic owner notes for remaining name spans, recorded at 4/4 recall,
   0 false positives, and 0 identifiers surviving the replay gate.
 - A durable Firestore workspace with a shareable resume URL that preserves facts, held questions,

@@ -87,7 +87,16 @@ class DrawingService:
 
     @classmethod
     def from_environment(cls, project: str, quota=None) -> "DrawingService":
-        enabled = os.environ.get("DOWNSTREAM_LIVE_MODEL", "").strip().lower() in {"1", "true", "yes"}
+        """Live inference is ON unless someone explicitly turns it off.
+
+        This defaulted to off once, as cost control, and the service shipped performing no
+        inference at all while the rules require Gemini 3.5 in the product. A daily cap is the
+        right way to bound spend; a default that silently removes the mandated model is not.
+        Turning it off now takes a deliberate `DOWNSTREAM_LIVE_MODEL=false`.
+        """
+        setting = os.environ.get("DOWNSTREAM_LIVE_MODEL", "true").strip().lower()
+        enabled = setting not in {"0", "false", "no", "off"}
+        # Not a policy switch: without a real project id there is no Vertex endpoint to call.
         return cls(
             project=project,
             model=os.environ.get("DOWNSTREAM_MODEL", "gemini-3.5-flash"),
