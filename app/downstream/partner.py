@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import re
 import uuid
 from datetime import datetime, timezone
@@ -15,7 +16,9 @@ from downstream.collaboration import (
 )
 from typing import Any
 
-from downstream.safety import DRAFT_DISCLOSURE, mapping_gate
+from downstream import autonomy
+from downstream.safety import DRAFT_DISCLOSURE
+from spine.redact import Redactor
 
 DEMO_DAM = {
     "nid_id": "SYNTH-DEMO-01",
@@ -30,6 +33,9 @@ DEMO_DAM = {
     "synthetic": True,
 }
 
+# The baseline drawing read, used when no drawing service is attached. The conflict is
+# deliberately absent: `autonomy.derive_height_conflict` finds it by comparing these values
+# against the registry row, so a drawing that agrees produces no sixth question.
 DRAWING_FACTS = [
     {
         "key": "crest_elevation",
@@ -37,7 +43,6 @@ DRAWING_FACTS = [
         "provenance": "recorded_gemini_drawing_extraction",
         "quoted_text": "TOP OF DAM EL. 742.6",
         "confidence": 0.96,
-        "status": "needs_owner_confirmation",
     },
     {
         "key": "spillway",
@@ -45,7 +50,6 @@ DRAWING_FACTS = [
         "provenance": "recorded_gemini_drawing_extraction",
         "quoted_text": "CONC. O.F. SPILLWAY 18'-0\"",
         "confidence": 0.91,
-        "status": "needs_owner_confirmation",
     },
     {
         "key": "dam_height_ft",
@@ -53,8 +57,6 @@ DRAWING_FACTS = [
         "provenance": "recorded_gemini_drawing_extraction",
         "quoted_text": "MAX. EMBANKMENT HT. 31 FT",
         "confidence": 0.88,
-        "status": "conflict",
-        "conflicts_with": "fixture_registry: 28 ft",
     },
 ]
 
@@ -124,18 +126,33 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def outstanding_ids(workspace: dict[str, Any]) -> list[str]:
+    """Question ids the owner has neither answered nor held."""
+    resolved = set(workspace.get("answers", {})) | set(workspace.get("skipped", []))
+    return [
+        question["id"]
+        for question in questions_for(workspace, QUESTION_BANK)
+        if question["id"] not in resolved
+    ]
+
+
 def create_workspace(
     *,
     dam: dict[str, Any] | None = None,
     facts: list[dict[str, Any]] | None = None,
+    drawing: Any | None = None,
+    registry_source: dict[str, Any] | None = None,
+    scheduler: Any | None = None,
+    trigger: str = autonomy.TRIGGER_PUBLIC,
 ) -> dict[str, Any]:
-    mapping = mapping_gate(
-        approved_map_supplied=False,
-        method_applicable=False,
-        jurisdiction_accepts=False,
-        reference_comparison_passed=False,
-    )
-    return {
+    """Open a workspace by running the autonomous opening sequence.
+
+    Nothing here waits for a click. The caller supplies a trigger and, optionally, a drawing
+    service and a wake scheduler; the agent resolves the record, reads the drawing, grounds the
+    facts, derives any source conflict, applies the mapping gate, schedules its follow-ups and
+    stops at the owner questions.
+    """
+    workspace = {
         "workspace_id": f"eap_{uuid.uuid4().hex[:12]}",
         "created_at": utc_now(),
         "updated_at": utc_now(),
@@ -153,11 +170,21 @@ def create_workspace(
             "unfamiliar_terms": [],
             "feedback_events": [],
         },
-        "mapping": mapping.__dict__,
         "plan": compose_plan({}),
         "status": "draft_in_progress",
         "disclosure": DRAFT_DISCLOSURE,
     }
+    autonomy.open_run(
+        workspace,
+        trigger=trigger,
+        outstanding=[],
+        drawing=drawing,
+        registry_source=registry_source,
+        scheduler=scheduler,
+    )
+    # The question set depends on the facts the run just grounded, so it is computed after.
+    workspace["outstanding"] = outstanding_ids(workspace)
+    return workspace
 
 
 def next_question(workspace: dict[str, Any]) -> dict[str, Any] | None:
@@ -195,6 +222,24 @@ def _gloss(term: str) -> str:
     }.get(term, term)
 
 
+_REDACTOR = Redactor()
+
+
+def shield(text: str) -> dict[str, Any]:
+    """Pseudonymise shaped identifiers for anything that leaves the workspace.
+
+    This deliberately does not overwrite the owner's words. An Emergency Action Plan needs the
+    emergency manager's actual name and actual after-hours number; replacing them would destroy
+    the artefact the owner came here to build. What it produces is a parallel, model-safe form,
+    and a list of the identifier shapes found so the interface can say what it noticed.
+    """
+    result = _REDACTOR.redact(text)
+    return {
+        "text": result.text,
+        "shapes": sorted({item.kind for item in result.replacements}),
+    }
+
+
 def record_answer(
     workspace: dict[str, Any],
     question_id: str,
@@ -224,8 +269,11 @@ def record_answer(
     if not clean:
         raise ValueError("answer cannot be empty")
     recorded_at = utc_now()
+    shielded = shield(clean)
     workspace["answers"][question_id] = {
         "answer": clean,
+        "model_safe_answer": shielded["text"],
+        "identifier_shapes": shielded["shapes"],
         "category": question["category"],
         "section": question["section"],
         "recorded_at": recorded_at,
@@ -244,6 +292,22 @@ def record_answer(
     workspace["asked"].append(question_id)
     workspace["sessions"][-1]["answers"] += 1
     workspace["plan"] = compose_plan(workspace["answers"])
+    autonomy.record_step(
+        workspace,
+        autonomy.HUMAN_AUTHORITY,
+        "owner_answer_recorded",
+        f"The owner supplied knowledge for {question_id}; the agent did not infer it.",
+        question_id=question_id,
+        section=question["section"],
+    )
+    workspace["outstanding"] = outstanding_ids(workspace)
+    autonomy.record_step(
+        workspace,
+        autonomy.AGENT,
+        "sections_recomposed",
+        "Recomposed every section whose evidence changed, without being asked.",
+        sections=[section["key"] for section in workspace["plan"]],
+    )
     workspace["updated_at"] = utc_now()
     return workspace
 
@@ -255,6 +319,14 @@ def revise_answer(
     at = utc_now()
     revise_owner_answer(workspace, question_id, revised_answer, reason, at)
     workspace["plan"] = compose_plan(workspace["answers"])
+    autonomy.record_step(
+        workspace,
+        autonomy.HUMAN_AUTHORITY,
+        "owner_correction_applied",
+        f"The owner corrected {question_id}; both versions are retained.",
+        question_id=question_id,
+        version=workspace["answers"][question_id]["version"],
+    )
     workspace["updated_at"] = at
     return workspace
 
@@ -267,6 +339,7 @@ def skip_question(workspace: dict[str, Any], question_id: str) -> dict[str, Any]
         raise ValueError("question already answered")
     if question_id not in workspace["skipped"]:
         workspace["skipped"].append(question_id)
+    workspace["outstanding"] = outstanding_ids(workspace)
     workspace["updated_at"] = utc_now()
     return workspace
 
@@ -305,21 +378,104 @@ def resume(workspace: dict[str, Any]) -> dict[str, Any]:
     workspace["sessions"].append(
         {"opened_at": utc_now(), "answers": 0, "reopened_questions": reopened}
     )
+    if reopened:
+        autonomy.record_step(
+            workspace,
+            autonomy.AGENT,
+            "held_questions_reopened",
+            f"Reopened {len(reopened)} held question(s) on the next session without being asked.",
+            reopened=reopened,
+        )
+    workspace["outstanding"] = outstanding_ids(workspace)
     workspace["updated_at"] = utc_now()
     return workspace
 
 
+CONTEXT_BUDGET_TOKENS = 900
+
+
+def assemble_context(workspace: dict[str, Any]) -> str:
+    """Build the exact payload a model turn would receive.
+
+    Bounded on purpose: deduplicated facts, the one section currently in play, and a fixed k of
+    requirement passages. Prior answers contribute their current value only, never their revision
+    history, and no session transcript is replayed.
+    """
+    question = next_question(workspace)
+    section_key = question["section"] if question else "purpose"
+    parts: list[str] = [json.dumps(workspace.get("dam", {}), sort_keys=True)]
+    seen: set[str] = set()
+    for fact in workspace.get("facts", []):
+        key = str(fact.get("key"))
+        if key in seen:
+            continue
+        seen.add(key)
+        parts.append(json.dumps(fact, sort_keys=True, default=str))
+    for answer in workspace.get("answers", {}).values():
+        # The redaction gate is load-bearing here: what crosses the model boundary is the
+        # pseudonymised form. The verbatim answer stays in the owner's workspace, because a
+        # notification flowchart is useless without the real name and the real number.
+        parts.append(str(answer.get("model_safe_answer") or answer.get("answer", "")))
+    for section in workspace.get("plan", []):
+        if section["key"] == section_key:
+            parts.append(json.dumps(section, sort_keys=True, default=str))
+    for requirement in REQUIREMENTS.values():
+        parts.append(requirement["text"])
+    if question:
+        parts.append(str(question.get("text", "")))
+    return "\n".join(parts)
+
+
+def transcript_replay(workspace: dict[str, Any]) -> str:
+    """What naive replay would have sent: every turn, every version, every session."""
+    parts: list[str] = [json.dumps(workspace.get("dam", {}), sort_keys=True)]
+    for fact in workspace.get("facts", []):
+        parts.append(json.dumps(fact, sort_keys=True, default=str))
+    for question_id, answer in workspace.get("answers", {}).items():
+        for entry in answer.get("history", []):
+            parts.append(f"{question_id} v{entry.get('version')}: {entry.get('answer')}")
+            parts.append(str(entry.get("reason", "")))
+    for question in QUESTION_BANK:
+        parts.append(question["plain"])
+        parts.append(question["technical"])
+        parts.append(question["why"])
+    for event in workspace.get("profile", {}).get("feedback_events", []):
+        parts.append(json.dumps(event, sort_keys=True, default=str))
+    for entry in workspace.get("timeline", []):
+        parts.append(json.dumps(entry, sort_keys=True, default=str))
+    for index, session in enumerate(workspace.get("sessions", [])):
+        parts.append(f"session {index}: {json.dumps(session, sort_keys=True, default=str)}")
+    for requirement in REQUIREMENTS.values():
+        parts.append(requirement["text"])
+    return "\n".join(parts)
+
+
+def estimate_tokens(text: str) -> int:
+    """Four characters per token. Coarse, stated as an estimate, applied to both sides equally."""
+    return (len(text) + 3) // 4
+
+
 def context_meter(workspace: dict[str, Any]) -> dict[str, Any]:
-    fact_tokens = min(260, 38 * (len(workspace["facts"]) + len(workspace["answers"])))
-    actual = 410 + fact_tokens
-    transcript = 410 + 180 * (len(workspace["asked"]) + len(workspace["sessions"]))
+    """Measure the context this turn would actually send.
+
+    This used to be a formula whose result was clamped below its own bound, so `within_bound`
+    could never be false and the two demo checks that read it could never fail. It now measures
+    the assembled payload, which means the bound is a budget the design has to keep rather than
+    an arithmetic identity.
+    """
+    actual = estimate_tokens(assemble_context(workspace))
+    replay = estimate_tokens(transcript_replay(workspace))
     return {
         "structured_context_tokens": actual,
-        "estimated_transcript_replay_tokens": transcript,
-        "ratio": round(actual / max(transcript, 1), 3),
-        "bound": 670,
-        "within_bound": actual <= 670,
-        "method": "deduplicated facts plus one current section and fixed-k requirements",
+        "estimated_transcript_replay_tokens": replay,
+        "ratio": round(actual / max(replay, 1), 3),
+        "bound": CONTEXT_BUDGET_TOKENS,
+        "within_bound": actual <= CONTEXT_BUDGET_TOKENS,
+        "headroom_tokens": CONTEXT_BUDGET_TOKENS - actual,
+        "method": (
+            "measured over the assembled turn payload: deduplicated facts, current answers, one "
+            "active section, and fixed-k requirements. Four characters per token."
+        ),
     }
 
 
@@ -390,4 +546,6 @@ def public_view(workspace: dict[str, Any]) -> dict[str, Any]:
     }
     view["adaptation"] = adaptation_snapshot(workspace)
     view["evidence_ledger"] = evidence_ledger(workspace)
+    view["autonomy_proof"] = autonomy.autonomy_proof(workspace)
+    view.pop("_tenant_id", None)
     return view

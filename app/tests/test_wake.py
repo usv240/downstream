@@ -79,7 +79,7 @@ def test_registration_is_idempotent(scheduler):
 def test_wake_ids_are_stable_and_distinct():
     assert wake_id_for("r", "k") == wake_id_for("r", "k")
     assert wake_id_for("r", "k") != wake_id_for("r", "k2")
-    assert wake_id_for("r", "k", "patient_a") != wake_id_for("r", "k", "patient_b")
+    assert wake_id_for("r", "k", "workspace_a") != wake_id_for("r", "k", "workspace_b")
 
 
 def test_a_wake_is_claimed_by_exactly_one_worker(clock):
@@ -227,9 +227,9 @@ def test_discharge_cancels_the_rest_of_the_ladder(scheduler, clock):
 def test_cancelled_wakes_are_marked_not_deleted(scheduler):
     """The audit trail must show what would have happened and why it did not."""
     scheduler.sleep_for("run_course", "stop_date_check", timedelta(days=7))
-    scheduler.cancel_run("run_course", "patient discharged")
+    scheduler.cancel_run("run_course", "draft handed to a reviewer")
 
     store_wakes = scheduler._store.for_run("run_course")
     assert len(store_wakes) == 1
     assert store_wakes[0].status is WakeStatus.CANCELLED
-    assert store_wakes[0].cancelled_reason == "patient discharged"
+    assert store_wakes[0].cancelled_reason == "draft handed to a reviewer"

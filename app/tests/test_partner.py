@@ -1,5 +1,6 @@
 import pytest
 
+from downstream.collaboration import questions_for
 from downstream.partner import (
     DRAWING_FACTS,
     QUESTION_BANK,
@@ -21,10 +22,38 @@ def test_workspace_is_explicitly_synthetic():
     assert workspace["dam"]["nid_id"].startswith("SYNTH-")
 
 
-def test_drawing_facts_keep_quotes_and_conflicts():
+def test_drawing_facts_carry_quotes_and_no_pre_baked_conflict():
+    """The fixture states what the drawing said. It does not state the answer.
+
+    The conflict used to be written into this constant, which meant the product could not have
+    got it wrong. Deriving it is the point of the check below.
+    """
     assert all(fact["quoted_text"] for fact in DRAWING_FACTS)
-    conflict = next(fact for fact in DRAWING_FACTS if fact["status"] == "conflict")
-    assert "fixture_registry" in conflict["conflicts_with"]
+    assert not any("conflict" in str(fact.get("status", "")) for fact in DRAWING_FACTS)
+    assert not any("conflicts_with" in fact for fact in DRAWING_FACTS)
+
+
+def test_conflict_is_derived_by_comparing_the_drawing_against_the_registry():
+    workspace = create_workspace()
+    conflict = next(fact for fact in workspace["facts"] if fact["status"] == "conflict")
+    assert conflict["key"] == "dam_height_ft"
+    assert str(workspace["dam"]["dam_height_ft"]) in conflict["conflicts_with"]
+
+
+def test_a_drawing_that_agrees_with_the_registry_raises_no_conflict():
+    workspace = create_workspace(
+        facts=[
+            {
+                "key": "dam_height_ft",
+                "value": 28,
+                "quoted_text": "MAX. EMBANKMENT HT. 28 FT",
+                "confidence": 0.9,
+                "provenance": "recorded_gemini_drawing_extraction",
+            }
+        ]
+    )
+    assert [fact["status"] for fact in workspace["facts"]] == ["agrees_with_registry"]
+    assert all(q["id"] != "resolve_dam_height_conflict" for q in questions_for(workspace, []))
 
 
 def test_questions_are_one_at_a_time_and_not_repeated():

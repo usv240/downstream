@@ -9,16 +9,34 @@ Live URL: https://downstream-109051079423.us-central1.run.app
 
 Repository: https://github.com/usv240/downstream
 
-Judge path: open /?guided=1#workspace. Ask for simpler language once, use the synthetic example
-answers, hold and reopen one question, then watch the 28 versus 31 foot source conflict become a
+**Fastest judge path — one request, nothing to click.** `POST /downstream/demo/run`, or press
+**Run the whole thing in one request** on the home page. The agent opens a run, reads the drawing,
+grounds the facts, derives the 28-versus-31-foot conflict, composes every section that has
+evidence, applies the mapping gate, schedules two durable wakes, fires them, and returns the draft
+with a receipt. Typical result: **15 automatic agent steps, 0 continue clicks**.
+
+**Full manual path.** Open `/?guided=1#workspace`. Ask for simpler language once, use the
+synthetic example answers, hold and reopen one question, then watch the source conflict become a
 targeted sixth question. Save the prepared correction, inspect both answer versions, refresh the
-shareable workspace URL to prove persistence, then open /evidence for the human-readable safety,
-category, Gemini, and Gemma evidence dashboard.
+shareable workspace URL to prove persistence, then open `/evidence` for the safety, category,
+Gemini, and Gemma dashboard. `/stack` reports which Google Cloud services this deployment is
+actually using.
 
 ## What it proves
 
+- **The opening sequence is autonomous.** One trigger, and the agent resolves the record, reads
+  the drawing, grounds the facts, derives any source conflict, composes every section that has
+  evidence, applies the mapping gate and registers its follow-ups. It stops at the owner
+  questions, because owner knowledge is the one thing it is not allowed to invent. Every step is
+  recorded on an ordered timeline with the actor that performed it, and the autonomy receipt at
+  `/downstream/workspaces/{id}/autonomy` is counted from that timeline rather than described.
+- **Work happens while nobody is watching.** A durable wake ladder registered at open reopens
+  questions the owner held for later and records a follow-up on an incomplete draft. Cloud
+  Scheduler calls `/internal/scan-due`; wakes claim once by compare-and-swap, retry a bounded
+  number of times, and dead-letter rather than looping.
 - Real Gemini 3.5 Flash multimodal extraction from a synthetic 1958-style drawing, recorded and
-  graded 5/5 against adjacent truth.
+  graded 5/5 against adjacent truth. With `DOWNSTREAM_LIVE_MODEL=true` the call happens in the
+  request path, capped daily and falling back to the graded recording on any error.
 - Gemma 4 MaaS reviews synthetic owner notes for remaining name spans, recorded at 4/4 recall,
   0 false positives, and 0 identifiers surviving the replay gate.
 - A durable Firestore workspace with a shareable resume URL that preserves facts, held questions,
@@ -30,46 +48,31 @@ category, Gemini, and Gemma evidence dashboard.
   updates the affected plan section, and remains visible through a public audit route.
 - Every rendered section publishes an evidence class: owner answer, published requirement, or
   fail-closed safety policy.
-- Bounded context: deduplicated facts, one active section, and fixed-k requirements remain within a
-  670-token application budget as empty sessions accumulate.
+- Bounded context, **measured rather than asserted**: the meter estimates the assembled turn
+  payload against what naive transcript replay would have sent. Structured context stays flat at
+  496 tokens across twelve further empty sessions while replay grows from 945 to 1,415. The
+  budget is 900 tokens and `/downstream/proof` includes a check that the meter can report a
+  breach, so it is capable of failing.
+- **Identifiers do not cross the model boundary.** The partner asks for an emergency manager's
+  name and after-hours number, because a notification flowchart is useless without them. The
+  owner keeps the verbatim answer; the pseudonymised form is what any model sees.
+- **Text lifted off a scan cannot issue instructions.** The transcription goes through an
+  untrusted-document gate before the quote gate, so an instruction-shaped line in a drawing is
+  quarantined and can never ground a fact.
+- **Abuse ceilings on every public write.** Per-network daily limits on workspace creation,
+  key creation and workspace creation, and a per-key daily limit on the API, all enforced
+  through atomic Firestore transactions. The stored bucket key is an HMAC of the address, never
+  a raw IP, and only the proxy-controlled tail of `X-Forwarded-For` is trusted.
 - A fail-closed mapping gate. The demo renders a single flow-path input, never an inundation extent,
   depth, velocity, arrival time, or evacuation zone.
 - Quote containment for regulatory claims. Empty or absent quotes cannot support a rendered claim.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    API[Approved API client] --> K[Hash-only API key and server-derived tenant]
-    K --> R[Live NID record lookup]
-    NID[USACE NID FeatureServer] --> R
-    J[Public synthetic judge console] --> FACTS[Provenance-bearing facts]
-    IMG[Synthetic legacy drawing] --> G[Vertex AI Gemini 3.5 Flash]
-    G --> Q[Transcription and quote gate]
-    R --> FACTS
-    Q --> FACTS
-    FACTS --> X{Sources conflict?}
-    X -->|yes| P[Targeted clarification]
-    X -->|no| DB[(Tenant-owned Firestore workspace)]
-    K --> P
-    OWNER[Owner, many short sessions] <--> P
-    P --> H[Versioned answer history]
-    H <--> DB
-    DB --> M[Bounded memory and profile]
-    M --> P
-    DB --> C[Section composer]
-    REQ[FEMA and ASDSO passages] --> V[Verifier]
-    C --> V
-    V --> L[Section evidence ledger]
-    MAP[Mapping applicability gate] -->|unproven| STOP[Safe stop, flow path only]
-    STOP --> L
-    L --> DRAFT[Reviewable EAP draft]
-    DRAFT --> UI[Accessible Cloud Run web app and API]
-    UI -->|owner correction| P
-```
+See [`docs/architecture.mmd`](docs/architecture.mmd) for the source and
+[`docs/architecture.svg`](docs/architecture.svg) for a rendered copy.
 
-The Mermaid source is also in `docs/architecture.mmd`, with a rendered
-`docs/architecture.svg` for environments that do not render Mermaid.
+![Downstream architecture](docs/architecture.png)
 
 ## Research and claim boundaries
 
@@ -102,10 +105,21 @@ from another key return 404 even if guessed.
 
 Full provisioning, expiry, and rotation instructions are in [the beta API guide](docs/api-beta.md).
 
-Invited developers can open [the live Developer page](https://downstream-109051079423.us-central1.run.app/developer), enter the invitation
-code supplied by the project owner, and generate a tenant-scoped key that expires after seven days.
-The plaintext key is shown once and remains only in page memory. The page includes a connection
-test, a copyable project request, immediate revocation, and a link to the interactive OpenAPI schema.
+**Anyone can get a key in about thirty seconds.** Open
+[the Developer page](https://downstream-109051079423.us-central1.run.app/developer), enter a label
+(email and organisation are optional), and a seven-day tenant-scoped key is issued immediately. No
+invitation, no account, no payment details.
+
+The tenant is **minted by the server**, not chosen by the caller: two people who create keys
+minutes apart land in different tenants and cannot reach each other's workspaces. The plaintext key
+is returned once and lives only in page memory; only its SHA-256 digest is stored.
+
+That page is also a working console. Pick any endpoint, edit the body, and execute it against the
+live service. Every response is shown four ways: a readable summary, the raw JSON, the response
+headers carrying your remaining budget, and the equivalent `curl` so anything you do there can be
+reproduced in a terminal. **Run the whole sequence** performs all eight calls in order and reports
+what each one proved. The full reference, with parameters and example bodies for every route, is on
+the same page, and the interactive OpenAPI schema is at `/docs`.
 
 Operators can also create a non-expiring key through Secret Manager:
 
@@ -119,14 +133,30 @@ to Cloud Run. The plaintext key is shown once and must not be committed or embed
 JavaScript.
 
 ```bash
-curl -H "X-API-Key: $DOWNSTREAM_API_KEY" \
-  https://downstream-109051079423.us-central1.run.app/v1
+BASE=https://downstream-109051079423.us-central1.run.app
 
+# Who am I, and what are my limits?
+curl -H "X-API-Key: $DOWNSTREAM_API_KEY" "$BASE/v1"
+
+# Find a real identifier first. The inventory is live, so do not hardcode one.
+curl -s "$BASE/downstream/nid/search?limit=3&state=IA"
+
+# Open a private workspace from that public record.
 curl -X POST \
   -H "X-API-Key: $DOWNSTREAM_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"nid_id":"IA00001"}' \
-  https://downstream-109051079423.us-central1.run.app/v1/workspaces
+  -d '{"nid_id":"IA03081"}' \
+  "$BASE/v1/workspaces"
+
+# Then answer, skip, revise, give feedback, resume, and read the autonomy receipt.
+curl -X POST -H "X-API-Key: $DOWNSTREAM_API_KEY" -H "Content-Type: application/json" \
+  -d '{"question_id":"access_heavy_rain","answer":"The low crossing washes out."}' \
+  "$BASE/v1/workspaces/$WORKSPACE_ID/answer"
+
+curl -H "X-API-Key: $DOWNSTREAM_API_KEY" "$BASE/v1/workspaces/$WORKSPACE_ID/autonomy"
+
+# Revoke it when you are done. The key stops working immediately.
+curl -X DELETE -H "X-API-Key: $DOWNSTREAM_API_KEY" "$BASE/v1/key"
 ```
 
 Open `/docs`, select **Authorize**, and enter the key to explore every protected operation.
@@ -160,7 +190,9 @@ python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: 211 tests, accessibility green in both themes, and 26/26 demo checks.
+Current verified result: **313 tests**, accessibility green in both themes, and **63/63** demo
+checks. Full evidence, including what is deliberately switched off in the deployed configuration,
+is in [VALIDATION_EVIDENCE.md](VALIDATION_EVIDENCE.md).
 
 To regenerate the multimodal evidence, first build the synthetic fixture and then make one paid
 Vertex AI call:
@@ -183,6 +215,34 @@ bash deploy.sh
 
 The deployment script creates the `downstream` Cloud Run service, permits public judge access, and
 enables Firestore persistence. The repository owns its public URL and deployment configuration.
+
+Two things are off unless you turn them on, and the script prints both reminders when it finishes:
+
+- **Scheduled execution.** The durable wake ladder only fires when something calls it. Point a
+  Cloud Scheduler cron at `POST /internal/scan-due` with the `X-Scheduler-Token` header. Without
+  `INTERNAL_SCHEDULER_TOKEN` configured the route returns 503 rather than running unauthenticated.
+- **Live inference.** Set `DOWNSTREAM_LIVE_MODEL=true` to put Gemini 3.5 Flash in the request
+  path. It is capped by `QUOTA_LIVE_MODEL_CALLS_PER_DAY` (25 by default) and replays the graded
+  recording past the cap or on any Vertex error. `/health` and `/stack` report which mode is
+  running, so the page can never claim live inference that is not happening.
+
+## Limits and quotas
+
+| Ceiling | Default | Keyed to |
+|---|---|---|
+| Developer key creations | **50 / day** | caller network |
+| Authenticated `/v1` calls | **1,000 / day** | API key |
+| Public demonstration workspaces | **500 / day** | caller network |
+| Live Gemini calls | 25 / day | deployment |
+
+These are sized so that testing the API thoroughly never hits a wall. They exist to stop a runaway
+script, not to ration honest use. Every authenticated response carries `X-RateLimit-Limit`,
+`X-RateLimit-Remaining` and `X-RateLimit-Reset`, so you never have to guess what is left.
+
+Counters are Firestore transactions, so two concurrent requests cannot both pass the last slot.
+What is stored is an HMAC of the caller address under a server-held pepper, never a raw IP. Only
+the proxy-controlled tail of `X-Forwarded-For` is trusted, so a caller cannot mint a fresh bucket
+by prepending a header. `/stack` publishes the limits the service is enforcing.
 
 ## Safety and provenance
 

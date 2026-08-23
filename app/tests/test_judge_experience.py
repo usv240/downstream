@@ -11,9 +11,9 @@ from downstream.partner import (
     resume,
     skip_question,
 )
-from downstream.store import MemoryWorkspaceStore
 from service.main import app as public_app
 from service.routes import build_router
+from service.runtime import local_runtime
 
 
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -45,7 +45,7 @@ def test_dynamic_conflict_can_be_held_and_reopened_in_a_new_session():
 
 def test_http_skip_and_resume_return_the_dynamic_conflict():
     api_app = FastAPI()
-    api_app.include_router(build_router(MemoryWorkspaceStore()))
+    api_app.include_router(build_router(local_runtime()))
     api = TestClient(api_app)
     workspace = api.post("/downstream/workspaces", json={}).json()
     workspace_id = workspace["workspace_id"]

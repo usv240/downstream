@@ -117,39 +117,66 @@ def main() -> int:
     landing = landing_path.read_text(encoding="utf-8") if landing_path else ""
     header_nav = re.search(r"<header.*?<nav[^>]*>(.*?)</nav>", landing, re.S)
     nav_links = re.findall(r"<a\s+[^>]*href=", header_nav.group(1) if header_nav else "")
+    # Six links is the ceiling: the five paths plus one call to action for the API key, which
+    # has to be reachable from every page or nobody finds it.
     landing_ok = (
         header_nav is not None
-        and len(nav_links) <= 5
+        and len(nav_links) <= 6
         and 'href="/developer"' in header_nav.group(1)
         and 'href="/docs"' in header_nav.group(1)
         and 'href="/judges"' in header_nav.group(1)
+        and 'class="nav-cta"' in header_nav.group(1)
         and 'id="api"' in landing
     )
     if landing_ok:
-        print(f"    PASS  landing navigation has {len(nav_links)} focused links and an API section")
+        print(f"    PASS  landing navigation has {len(nav_links)} focused links, an API key call to action, and an API section")
     else:
         failures.append("landing navigation is overloaded or missing a core user path")
-        print("    FAIL  landing must expose demo, developer, docs, and judge paths in five links")
+        print("    FAIL  landing must expose demo, developer, docs, judge paths and a key CTA in six links")
+
+    every_page_ok = all(
+        'class="nav-cta"' in (WEB / name).read_text(encoding="utf-8")
+        for name in ("downstream.html", "developer.html", "downstream-judges-v2.html", "downstream-evidence.html")
+    )
+    if every_page_ok:
+        print("    PASS  the API key call to action is reachable from every public page")
+    else:
+        failures.append("the API key call to action is missing from a public page")
+        print("    FAIL  a public page has no route to an API key")
 
     developer = (WEB / "developer.html").read_text(encoding="utf-8")
     developer_js = (WEB / "developer.js").read_text(encoding="utf-8")
+    # The journey a developer actually needs: mint a key, load an existing one, run a real call,
+    # read every response four ways, and find the reference and the OpenAPI schema.
     required_journey = (
         'id="create-key"',
-        'id="verify"',
-        'id="workflow"',
+        'id="console"',
+        'id="reference"',
         'id="active-api-key"',
-        'data-copy-code=',
+        'id="send-request"',
+        'id="raw-output"',
+        'id="formatted-output"',
+        'id="curl-output"',
+        'id="endpoint-reference"',
         'href="/docs"',
     )
-    journey_ok = all(token in developer for token in required_journey)
-    storage_ok = not any(
-        token in developer_js for token in ("localStorage", "sessionStorage", "document.cookie")
+    missing = [token for token in required_journey if token not in developer]
+    # Look for use, not mention. The previous form matched the source comment that promises
+    # credentials are never stored, so documenting the guarantee broke the check for it.
+    developer_code = "".join(
+        line for line in developer_js.splitlines(keepends=True)
+        if not line.lstrip().startswith(("//", "*", "/*"))
     )
-    if journey_ok and storage_ok:
-        print("    PASS  create, verify, call, copy, and docs paths exist without browser credential storage")
+    storage_ok = not any(
+        token in developer_code
+        for token in ("localStorage.", "sessionStorage.", "document.cookie", "localStorage[", "sessionStorage[")
+    )
+    if not missing and storage_ok:
+        print("    PASS  create, load, run, read raw and formatted, and reference paths exist "
+              "without browser credential storage")
     else:
         failures.append("developer quickstart is incomplete or stores credentials in the browser")
-        print("    FAIL  developer journey or credential-storage boundary is incomplete")
+        print(f"    FAIL  developer journey incomplete {missing} or credentials are stored")
     print()
 
     print("Compact laptop layout\n")

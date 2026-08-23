@@ -3,14 +3,19 @@
 The public judge workflow remains credential-free. The `/v1` API is a separate, key-protected
 integration surface with server-derived tenant isolation.
 
-## Get a temporary key from the website
+## Get a key from the website
 
-1. Ask the project owner for a private invitation code.
-2. Open [https://downstream-109051079423.us-central1.run.app/developer](https://downstream-109051079423.us-central1.run.app/developer).
-3. Choose a lowercase workspace ID and a human-readable label.
-4. Accept the project-specific safety contract.
-5. Generate the key, save it immediately, and run the built-in connection test.
-6. Open [the interactive API reference](https://downstream-109051079423.us-central1.run.app/docs) for schemas and operations.
+No invitation, no account, no payment details.
+
+1. Open [https://downstream-109051079423.us-central1.run.app/developer](https://downstream-109051079423.us-central1.run.app/developer).
+2. Give the key a label. Email, organisation, and what you are building are optional and are
+   recorded as contact metadata only; none of it affects what the key can do.
+3. Accept the project-specific safety contract.
+4. Generate the key and save it immediately: the plaintext value is returned once.
+5. Use the console on the same page to run any endpoint, or **Run the whole sequence** to execute
+   all eight calls in order.
+
+You do not choose a tenant. The server mints one per key.
 
 Temporary keys expire after 168 hours. The plaintext value is returned once and remains only in
 page memory. Firestore stores its SHA-256 digest, project, tenant, scope, issuance time, expiry, and
@@ -18,6 +23,31 @@ optional revocation time. The holder can revoke the key immediately with `DELETE
 
 This is invite-gated self-service, not anonymous public issuance. The invitation code protects the
 project's model and infrastructure budget. Rotate it immediately if it is exposed.
+
+### Tenant isolation
+
+The tenant a key speaks for is **minted by the server**, never supplied by the caller. An earlier
+version accepted `tenant_id` in the request body, which meant one holder of a shared invitation
+code could mint a key naming another holder's tenant and then read their workspaces. Two
+developers redeeming the same code now land in separate tenants, and a workspace ID belonging to
+one is a 404 for the other even if it is guessed correctly. Any `tenant_id` sent in the body is
+ignored.
+
+### Limits
+
+| Ceiling | Default | Keyed to |
+|---|---|---|
+| Authenticated `/v1` calls | **1,000** per UTC day | your API key |
+| Key creations | **50** per UTC day | caller network |
+| Public demo workspaces | **500** per UTC day | caller network |
+
+Sized so that evaluating the API thoroughly never hits a wall. Every authenticated response
+carries the three rate-limit headers, so the remaining budget is always visible.
+
+A refusal is `429` and carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and
+`X-RateLimit-Reset`. Counters are Firestore transactions, so the limit holds across Cloud Run
+instances. The stored bucket key is an HMAC of the caller address under a server-held pepper; no
+raw IP is written. `GET /v1` echoes the current published limits.
 
 ## Configure website issuance
 
@@ -90,3 +120,34 @@ Every claim remains within the product's screening-level boundary.
 Before a broad external program, place API Gateway in front of `/v1` for per-consumer quotas,
 rate limits, abuse controls, and formal onboarding. The invitation boundary and Cloud Run cap make
 this suitable for an invited hackathon beta, not an unrestricted public service.
+
+
+## Autonomy receipt
+
+`GET /v1/workspaces/{id}/autonomy` returns what the agent did on its own, counted from the stored
+run timeline rather than described:
+
+```json
+{
+  "trigger": "approved_api_client_supplied_an_nid_identifier",
+  "automatic_agent_steps": 6,
+  "human_authority_steps": 0,
+  "external_evidence_steps": 2,
+  "continue_clicks_required": 0,
+  "durable_wakes_registered": 2,
+  "waiting_on": "owner knowledge for access_heavy_rain, ...",
+  "authority_reserved": ["owner site knowledge", "..."],
+  "system_decisions_over_reserved_authority": 0,
+  "timeline": [{"at": "...", "actor": "agent", "step": "facts_grounded", "detail": "..."}]
+}
+```
+
+`actor` is one of `agent`, `human_authority`, or `external_evidence`. The claim this supports is
+narrow and checkable: every in-scope transition runs automatically, and the run pauses only for
+owner knowledge or for evidence that has to come from outside.
+
+## What the API will not do
+
+It produces a reviewable draft. It does not create an inundation extent, certify a plan, make a
+condition assessment, predict failure, contact an agency, or submit anything. There is no endpoint
+whose path contains approve, certify, or submit, and `/downstream/proof` asserts that.

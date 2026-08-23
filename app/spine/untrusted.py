@@ -1,8 +1,8 @@
 """Handling documents written by someone other than the user.
 
-All three projects ingest untrusted input. A scanned culture report, a photographed determination
-letter and a 1958 drawing are all produced by a third party, and any of them could contain text
-shaped like an instruction.
+This product ingests untrusted input. A 1958 embankment drawing, a photographed determination
+letter and a scanned inspection note are all produced by a third party, and any of them could
+contain text shaped like an instruction.
 
 Rules.md line 88 names prompt injection and tool poisoning as guardrail categories for this
 platform. This module is defence in depth, not the guarantee. **The guarantee is the Verifier**:
@@ -123,8 +123,8 @@ def sanitise(text: str) -> tuple[str, list[Quarantined]]:
     """Return the text with instruction-shaped spans replaced, plus what was removed.
 
     The run continues without the quarantined spans rather than failing, because a real scanned
-    document can contain an unlucky phrase and refusing to process a patient's lab report would
-    be a worse failure than removing a sentence.
+    document can contain an unlucky phrase and refusing to read an owner's only drawing would be
+    a worse failure than removing a sentence.
     """
     spans = scan(text)
     if not spans:

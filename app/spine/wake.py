@@ -55,8 +55,8 @@ def wake_id_for(run_id: str, kind: str, discriminator: str = "") -> str:
     """Deterministic id.
 
     Registering the same logical wake twice produces the same id, so re-running a registration
-    after a crash cannot create a second wake. This is the first of the two defences against a
-    patient being paged about twice.
+    after a crash cannot create a second wake. This is the first of the two defences against an
+    owner being chased twice for the same answer.
     """
     digest = hashlib.sha256(f"{run_id}|{kind}|{discriminator}".encode()).hexdigest()[:16]
     return f"wk_{digest}"
@@ -293,7 +293,7 @@ class WakeScheduler:
         )
 
     def cancel_run(self, run_id: str, reason: str) -> int:
-        """Cancel remaining wakes, for example when a patient is discharged.
+        """Cancel remaining wakes, for example when a draft is handed to a reviewer.
 
         Cancelled wakes are marked, never deleted, so the audit trail shows what would have
         happened and why it did not.

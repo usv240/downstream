@@ -6,6 +6,14 @@ REGION="${GOOGLE_CLOUD_REGION:-us-central1}"
 SERVICE_ACCOUNT="${SERVICE_ACCOUNT:-sa-reason@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com}"
 BETA_API_SECRET="${BETA_API_SECRET:-}"
 BETA_ENROLLMENT_SECRET="${BETA_ENROLLMENT_SECRET:-}"
+# Secret Manager names for the scheduler trigger and the quota fingerprint pepper.
+SCHEDULER_TOKEN_SECRET="${SCHEDULER_TOKEN_SECRET:-}"
+QUOTA_PEPPER_SECRET="${QUOTA_PEPPER_SECRET:-}"
+# Live Gemini inference in the request path. Off by default so a deployment cannot start
+# spending without someone choosing to; the service replays its graded recording instead.
+LIVE_MODEL="${DOWNSTREAM_LIVE_MODEL:-false}"
+# Key issuance. "open" lets a judge self-serve; "invite_only" requires BETA_ENROLLMENT_SECRET.
+ISSUANCE_MODE="${DEVELOPER_ISSUANCE_MODE:-open}"
 
 GCLOUD_BIN="${GCLOUD_BIN:-gcloud}"
 GCLOUD_VIA_WINDOWS_POWERSHELL=false
@@ -31,6 +39,12 @@ fi
 if [[ -n "${BETA_ENROLLMENT_SECRET}" ]]; then
   BETA_SECRET_MAPPINGS+=("BETA_ENROLLMENT_CODE_HASH=${BETA_ENROLLMENT_SECRET}:latest")
 fi
+if [[ -n "${SCHEDULER_TOKEN_SECRET}" ]]; then
+  BETA_SECRET_MAPPINGS+=("INTERNAL_SCHEDULER_TOKEN=${SCHEDULER_TOKEN_SECRET}:latest")
+fi
+if [[ -n "${QUOTA_PEPPER_SECRET}" ]]; then
+  BETA_SECRET_MAPPINGS+=("QUOTA_FINGERPRINT_PEPPER=${QUOTA_PEPPER_SECRET}:latest")
+fi
 BETA_SECRET_ARGS=()
 if (( ${#BETA_SECRET_MAPPINGS[@]} )); then
   BETA_SECRET_VALUE="$(IFS=,; echo "${BETA_SECRET_MAPPINGS[*]}")"
@@ -51,6 +65,27 @@ run_gcloud run deploy downstream \
   --min-instances 0 \
   --max-instances 3 \
   --concurrency 20 \
-  --update-env-vars "GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},USE_FIRESTORE=true,BETA_DEVELOPER_KEY_TTL_HOURS=168" \
+  --update-env-vars "GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},USE_FIRESTORE=true,BETA_DEVELOPER_KEY_TTL_HOURS=168,DOWNSTREAM_LIVE_MODEL=${LIVE_MODEL},TRUSTED_PROXY_HOPS=1,DEVELOPER_ISSUANCE_MODE=${ISSUANCE_MODE}" \
   "${BETA_SECRET_ARGS[@]}" \
   --quiet
+
+cat <<'NOTE'
+
+Deployed. Two follow-ups if this is a fresh project.
+
+1. Scheduled execution. The durable wake ladder only fires when something calls it. Create the
+   cron once, pointing at /internal/scan-due and carrying the shared token:
+
+     gcloud scheduler jobs create http downstream-scan-due
+       --schedule "*/15 * * * *"
+       --uri "<service-url>/internal/scan-due"
+       --http-method POST
+       --headers "X-Scheduler-Token=<value of the downstream-scheduler-token secret>"
+       --location us-central1
+
+   Without INTERNAL_SCHEDULER_TOKEN set, that route returns 503 rather than running open.
+
+2. Live inference. Set DOWNSTREAM_LIVE_MODEL=true to put Gemini 3.5 Flash in the request path.
+   It is capped by QUOTA_LIVE_MODEL_CALLS_PER_DAY (25 by default) and falls back to the graded
+   recording past the cap or on any Vertex error.
+NOTE

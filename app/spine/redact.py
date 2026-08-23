@@ -7,17 +7,17 @@ that happens, so what crosses is pseudonymised rather than personal.
 
 Two layers, deliberately in this order:
 
-1. **Deterministic patterns first.** Identifiers with reliable shapes: MRNs, SSNs, phone numbers,
-   dates of birth, street addresses, email addresses. Regex catches these with certainty, and a
-   certainty is worth more than a probability. This layer alone satisfies the gate in replay and
-   test environments, and it is what the 165-test suite exercises.
+1. **Deterministic patterns first.** Identifiers with reliable shapes: SSNs, phone numbers,
+   dates of birth, street addresses, PO boxes, email addresses and federal case references.
+   Regex catches these with certainty, and a certainty is worth more than a probability. This
+   layer alone satisfies the gate in replay and test environments.
 2. **Gemma second, for what has no shape.** Person names mostly. `GemmaReviewer` sends the
    already-pattern-redacted text to Gemma on Vertex AI and asks only for spans to remove, never
-   for a rewrite, so the reviewer cannot alter clinical content. In replay mode this layer serves
-   recordings like every other model call.
+   for a rewrite, so the reviewer cannot alter what the note actually says about the site. In
+   replay mode this layer serves recordings like every other model call.
 
 The mapping from pseudonym to original value never leaves this module's store. Reasoning services
-receive text with PERSON_1, MRN_1, DOB_1 in it and have no way back.
+receive text with PERSON_1, PHONE_1, DOB_1 in it and have no way back.
 
 Fail closed: if the gate errors, the step fails. A document never proceeds to the model
 unredacted because redaction was inconvenient.
@@ -58,13 +58,6 @@ class RedactionError(RuntimeError):
 # Order matters: more specific shapes first, so an SSN is not half-eaten by the phone pattern.
 _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("SSN", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
-    ("MRN", re.compile(r"\b(?:MRN|MR#|Medical Record(?: No\.?| Number)?)[:\s#]*([A-Z]?\d{5,10})\b", re.I)),    # Laboratory accession numbers link a specimen to a patient even when the name and MRN are
-    # absent. Keep the label narrow so ordinary phrases such as "Laboratory Medicine" survive.
-    ("ACCESSION", re.compile(
-        r"\b(?:Accession(?: No\.?| Number| ID)?|Lab(?:oratory)? (?:ID|No\.?|Number))"
-        r"[:\s#]*([A-Z0-9][A-Z0-9-]{3,24})\b",
-        re.I,
-    )),
     # No leading \b: a word boundary before "(" can never match, since both the preceding space
     # and the paren are non-word characters. (?<!\d) guards against eating the tail of a longer
     # number instead.
@@ -79,28 +72,22 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         r"([A-Z0-9][A-Z0-9-]{3,19})\b",
         re.I,
     )),
-    # Labeled person names.
-    #
-    # Two bugs lived here and both leaked real identifiers, found by auditing realistic
-    # decision-letter fixtures:
-    #   1. The label list only knew clinical words, so "Applicant:" was never matched.
-    #   2. The name shape required Titlecase, but government letters print names in ALL CAPS,
-    #      so "Applicant: DEVON CARTER" matched nothing even once the label was added.
-    # Single spaces only between name words: \s would match a newline and swallow the next label.
     # PO boxes: a mailing address with no street suffix for the ADDRESS pattern to anchor on.
     ("ADDRESS", re.compile(r"\bP\.?\s?O\.?\s?Box\s+\d+\b", re.I)),
-    # Labeled person names.
+    # Labeled person names, as they appear in owner notes, inspection notes and the contact
+    # blocks of a notification flowchart.
     #
-    # Boundary probing found three further leaks after the ALL-CAPS fix, all of them ordinary
-    # real-world spellings:
+    # Boundary probing found three leaks here, all of them ordinary real-world spellings:
     #   * hyphenated names   ("MARY-JANE OKONKWO")
     #   * apostrophes        ("SEAN O'BRIEN", including the typographic apostrophe)
-    #   * a lowercase label  ("applicant:" as typed in an email or a scan transcription)
+    #   * a lowercase label  ("owner:" as typed in an email or a scan transcription)
     # The label is matched case-insensitively via a scoped group, but the *name* stays
     # case-sensitive on purpose: making the whole pattern IGNORECASE would let the all-caps
-    # alternative match ordinary lowercase prose and redact half the letter.
+    # alternative match ordinary lowercase prose and redact half the document.
+    # Single spaces only between name words: \s would match a newline and swallow the next label.
     ("PERSON", re.compile(
-        r"\b(?i:Patient(?: Name)?|Applicant(?: Name)?|Recipient|Claimant|Name)[: ]+"
+        r"\b(?i:Owner(?: Name)?|Operator|Applicant(?: Name)?|Emergency Manager|Contact"
+        r"|Recipient|Claimant|Inspector|Engineer|Name)[: ]+"
         r"((?:[A-Z][a-z'’-]+|[A-Z][A-Z'’-]+)"
         r"(?: (?:[A-Z][a-z'’-]+|[A-Z][A-Z'’-]+)){1,3})"
     )),

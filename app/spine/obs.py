@@ -42,7 +42,7 @@ def setup_tracing(project_id: str, service_name: str) -> bool:
 
     Safe to call when the exporter is unavailable, for example in a unit test run. The system
     degrades to no tracing rather than failing to start, because losing a trace is not a reason
-    to refuse to treat a patient.
+    to refuse an owner the draft they came to build.
     """
     if not _OTEL:
         return False

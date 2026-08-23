@@ -23,8 +23,7 @@ from enum import StrEnum
 
 
 class ClaimKind(StrEnum):
-    SUSCEPTIBILITY = "susceptibility"  # this organism is susceptible to this drug
-    GUIDELINE = "guideline"  # a clinical or regulatory guideline says X
+    GUIDELINE = "guideline"  # a published guidance document says X
     REGULATORY = "regulatory"  # a rule this jurisdiction imposes
     MEASUREMENT = "measurement"  # a number: a percentage, a count, a distance
     INFERENCE = "inference"  # derived from other claims, which must be named
@@ -97,7 +96,7 @@ class CircuitBroken(RuntimeError):
 def normalise(text: str) -> str:
     """Collapse the noise that separates a quote from its source.
 
-    Scanned lab reports contain runs of spaces, inconsistent case, and unicode dashes that differ
+    Scanned drawings contain runs of spaces, inconsistent case, and unicode dashes that differ
     from what a model reproduces. None of that should decide whether a quote is genuine, but a
     changed word should.
     """

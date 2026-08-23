@@ -54,7 +54,11 @@ class FirestoreApiKeyStore:
         scopes: list[str],
         issued_at: datetime,
         expires_at: datetime,
+        contact: dict[str, str] | None = None,
     ) -> None:
+        # `contact` is what the developer told us about themselves. It is stored beside the
+        # digest so the project can see who is using the beta, and it is never read back into
+        # an authorisation decision.
         self._keys.document(digest).create({
             "product": self._product,
             "tenant_id": tenant_id,
@@ -63,6 +67,7 @@ class FirestoreApiKeyStore:
             "issued_at": issued_at,
             "expires_at": expires_at,
             "revoked_at": None,
+            "contact": contact or {},
         })
 
     def revoke(self, digest: str, revoked_at: datetime) -> bool:
@@ -75,12 +80,21 @@ class FirestoreApiKeyStore:
 
 
 class MemoryApiKeyStore:
-    """Deterministic test double with the same expiry and revocation behavior."""
+    """Credential-free store with the same expiry and revocation behaviour as Firestore.
+
+    `now` is a live reading unless a test pins one. Freezing it at construction would have made
+    every key immortal on the local, no-Firestore path, which is the opposite of the guarantee
+    this store exists to provide.
+    """
 
     def __init__(self, product: str, now: datetime | None = None) -> None:
         self.product = product
-        self.now = now or _utc_now()
+        self._pinned_now = now
         self.records: dict[str, dict[str, Any]] = {}
+
+    @property
+    def now(self) -> datetime:
+        return self._pinned_now if self._pinned_now is not None else _utc_now()
 
     def get(self, digest: str) -> dict[str, Any] | None:
         data = self.records.get(digest)

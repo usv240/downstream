@@ -25,7 +25,7 @@ def test_source_conflict_becomes_a_targeted_question():
     assert question["evidence"] == {
         "drawing_value": 31,
         "drawing_quote": "MAX. EMBANKMENT HT. 31 FT",
-        "conflicts_with": "fixture_registry: 28 ft",
+        "conflicts_with": "registry record: 28 ft",
     }
 
     record_answer(workspace, question["id"], "Please explain.", did_not_understand=True)

@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from downstream.store import MemoryWorkspaceStore
 from service.routes import build_router
+from service.runtime import local_runtime
 
 
 def api():
     app = FastAPI()
-    app.include_router(build_router(MemoryWorkspaceStore()))
+    app.include_router(build_router(local_runtime()))
     return TestClient(app)
 
 

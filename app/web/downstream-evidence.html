@@ -13,7 +13,7 @@
   <a class="skip-link" href="#main">Skip to main content</a>
   <header class="site"><div class="wrap bar">
     <div class="brand">Downstream <span>Evidence dashboard</span></div>
-    <nav aria-label="Primary"><a href="/">Product</a><a href="/?guided=1#workspace">Guided demo</a><a href="/judges">Judge notes</a><a href="/developer">Developer API</a><a href="/docs">API docs</a></nav>
+    <nav aria-label="Primary"><a href="/">Product</a><a href="/?guided=1#workspace">Guided demo</a><a href="/judges">Judge notes</a><a href="/docs">API docs</a><a class="nav-cta" href="/developer">Get an API key</a></nav>
     <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch color theme" aria-pressed="false">Dark mode</button>
   </div></header>
   <main id="main">
@@ -23,6 +23,16 @@
       <p class="lede">This page runs the public safety proof, loads the category mapping, shows measured Gemini extraction, and checks the recorded Gemma privacy layer. Raw responses remain available beside each summary.</p>
       <div class="evaluator-actions"><a href="/?guided=1#workspace">Run guided workflow</a><a href="/judges">Open five-minute judge path</a><a href="https://github.com/usv240/downstream">Inspect repository</a></div>
       <div id="evidence-status" class="app-status working" role="status" aria-live="polite" aria-atomic="true">Loading executable evidence.</div>
+    </div></section>
+
+    <section id="autonomy"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">Autonomy, executed live</p><h2>One request, and the agent does the work.</h2></div><p>This page runs <code>POST /downstream/demo/run</code> on load. The numbers below are counted from that run's stored timeline.</p></div>
+      <div class="evidence-panel wide">
+        <div class="evidence-grid" id="autonomy-tiles"><article class="evidence-panel"><h3>Running the agent</h3></article></div>
+        <p id="autonomy-waiting" class="muted">Executing a live run.</p>
+        <details class="answer-history"><summary id="autonomy-summary">Run timeline</summary><ol id="autonomy-timeline"></ol></details>
+        <a href="/downstream/demo/run">Raw run output</a>
+      </div>
     </div></section>
 
     <section id="proof"><div class="wrap">

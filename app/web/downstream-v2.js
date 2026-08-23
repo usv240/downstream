@@ -264,6 +264,36 @@ function updatePersistentControls() {
   $("#less-detail").disabled = !enabled;
 }
 
+const STEP_LABELS = {
+  agent: "Agent",
+  human_authority: "Owner authority",
+  external_evidence: "External event",
+};
+
+function renderAutonomy(workspace) {
+  const proof = workspace.autonomy_proof;
+  if (!proof) return;
+  const tiles = [
+    ["Automatic agent steps", proof.automatic_agent_steps],
+    ["Owner authority steps", proof.human_authority_steps],
+    ["Continue clicks required", proof.continue_clicks_required],
+    ["Durable wakes registered", proof.durable_wakes_registered],
+  ];
+  $("#autonomy-grid").innerHTML = tiles
+    .map(([label, value]) =>
+      '<div class="profile-item"><small>' + text(label) + "</small><b>" + text(value) + "</b></div>")
+    .join("");
+  $("#autonomy-waiting").textContent =
+    "Trigger: " + proof.trigger.replaceAll("_", " ") + ". Now waiting on " + proof.waiting_on + ".";
+  $("#autonomy-timeline").innerHTML = (proof.timeline || [])
+    .map((entry) =>
+      '<li class="timeline-step ' + entry.actor + '">' +
+      '<b>' + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
+      "<span>" + text(entry.detail) + "</span>" +
+      "<small>" + text(entry.step.replaceAll("_", " ")) + "</small></li>")
+    .join("");
+}
+
 function render(workspace, options = {}) {
   state.workspace = workspace;
   syncWorkspaceIdentity(workspace);
@@ -272,6 +302,7 @@ function render(workspace, options = {}) {
   renderPlan(workspace);
   renderRevision(workspace);
   renderProfile(workspace);
+  renderAutonomy(workspace);
   if (options.focusQuestion) {
     window.requestAnimationFrame(() => $("#current-question-heading")?.focus());
   }
@@ -419,7 +450,30 @@ function initTheme() {
   });
 }
 
+async function runWholeThing() {
+  setBusy(true);
+  setStatus("Running the full sequence server-side. Nothing to click.", "neutral");
+  try {
+    const result = await api("/downstream/demo/run", {method: "POST"});
+    const workspace = await api("/downstream/workspaces/" + result.workspace_id);
+    render(workspace);
+    setStatus(
+      "Done in " + result.elapsed_ms + " ms. " +
+      result.autonomy_proof.automatic_agent_steps + " automatic steps, " +
+      result.scheduled_actions_fired.length + " scheduled actions fired, 0 clicks. " +
+      "Owner answers were synthetic; the rehearsal clock was simulated.",
+      "success",
+    );
+    document.querySelector("#autonomy-pane").scrollIntoView({behavior: "smooth", block: "center"});
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    setBusy(false);
+  }
+}
+
 $("#start-demo").addEventListener("click", start);
+$("#run-whole-thing").addEventListener("click", runWholeThing);
 $("#load-nid").addEventListener("click", loadNid);
 $("#accept-plan").addEventListener("click", () => feedback("accept"));
 $("#less-detail").addEventListener("click", () => feedback("not_right", "Too much detail"));

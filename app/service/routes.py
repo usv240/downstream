@@ -3,19 +3,25 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from downstream import autonomy
+from downstream.autonomy import NUDGE_AFTER
 from downstream.bonus import gemma_redaction_proof
 from downstream.partner import (
     REQUIREMENTS,
     QUESTION_BANK,
+    assemble_context,
+    context_meter,
     create_workspace,
     next_question,
+    outstanding_ids,
     public_view,
     record_answer,
     record_feedback,
@@ -25,7 +31,6 @@ from downstream.partner import (
 )
 from downstream.registry import fallback_records, search_high_hazard_unreported
 from downstream.safety import DRAFT_DISCLOSURE, SCREENING_DISCLOSURE, mapping_gate
-from downstream.store import WorkspaceStore
 from spine.verify import Claim, ClaimKind, SourceRef, Verifier
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
@@ -52,8 +57,9 @@ class RevisionRequest(BaseModel):
     reason: str = Field(min_length=2, max_length=500)
 
 
-def build_router(store: WorkspaceStore) -> APIRouter:
+def build_router(runtime) -> APIRouter:
     router = APIRouter(prefix="/downstream", tags=["downstream"])
+    store = runtime.workspaces
 
     def require(workspace_id: str) -> dict[str, Any]:
         workspace = store.get(workspace_id)
@@ -156,10 +162,25 @@ def build_router(store: WorkspaceStore) -> APIRouter:
         }
 
     @router.post("/workspaces")
-    def open_workspace() -> dict[str, Any]:
-        workspace = create_workspace()
+    def open_workspace(request: Request) -> dict[str, Any]:
+        """Open a workspace. The trigger is the only human act in the opening sequence."""
+        runtime.public_workspace_quota.enforce_network(
+            request,
+            "This network has opened its daily allowance of demonstration workspaces. "
+            "The allowance resets at UTC midnight.",
+        )
+        workspace = create_workspace(
+            drawing=runtime.drawing.read(),
+            scheduler=runtime.scheduler,
+            trigger=autonomy.TRIGGER_PUBLIC,
+        )
         store.put(workspace)
         return public_view(workspace)
+
+    @router.get("/workspaces/{workspace_id}/autonomy")
+    def workspace_autonomy(workspace_id: str) -> dict[str, Any]:
+        """The autonomy receipt, derived from the persisted timeline."""
+        return autonomy.autonomy_proof(require(workspace_id))
 
     @router.get("/workspaces/{workspace_id}")
     def get_workspace(workspace_id: str) -> dict[str, Any]:
@@ -234,6 +255,99 @@ def build_router(store: WorkspaceStore) -> APIRouter:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         store.put(workspace)
         return public_view(workspace)
+
+    DEMO_ANSWERS = {
+        "access_heavy_rain": "The gravel lane off Cedar Hollow Road is the only way up, and it "
+        "washes out at the second bend in heavy rain.",
+        "emergency_manager": "Example County emergency management, duty desk, reachable "
+        "after hours through the synthetic non-emergency line.",
+        "downstream_people": "A seasonal campground sits below the spillway from May to "
+        "September and does not appear on any public parcel layer.",
+        "spillway_history": "Water topped the overflow channel in the 1998 storm and cut a "
+        "gully on the left abutment.",
+        "equipment": "A neighbouring farm keeps a tracked excavator about forty minutes away.",
+        "resolve_dam_height_conflict": "Our insurance file uses 28 feet. The drawing has not "
+        "been checked since 1958, so the state engineer should confirm it.",
+    }
+
+    @router.post("/demo/run")
+    def demo_run(request: Request) -> dict[str, Any]:
+        """One request. Server-side. Trigger to reviewable draft, with nothing to click.
+
+        A judge should not have to perform eleven interactions to find out whether the workflow
+        works. This runs the whole thing in one call and returns the receipt, the draft, and the
+        measured context so the result can be checked rather than watched.
+
+        The owner answers here are synthetic and labelled as such. They stand in for the one
+        thing the agent is not allowed to invent, so that everything the agent *is* allowed to do
+        can be seen end to end.
+        """
+        runtime.public_workspace_quota.enforce_network(
+            request,
+            "This network has opened its daily allowance of demonstration workspaces. "
+            "The allowance resets at UTC midnight.",
+        )
+        started = time.perf_counter()
+        workspace = create_workspace(
+            drawing=runtime.drawing.read(),
+            scheduler=runtime.scheduler,
+            trigger=autonomy.TRIGGER_PUBLIC,
+        )
+
+        # Answer the owner questions as they come, one at a time, in the order the agent asks.
+        # Nothing is answered that the agent did not raise.
+        asked: list[str] = []
+        while True:
+            question = next_question(workspace)
+            if question is None:
+                break
+            reply = DEMO_ANSWERS.get(question["id"])
+            if reply is None:
+                break
+            asked.append(question["id"])
+            record_answer(workspace, question["id"], reply)
+
+        # One correction, to show the work product changing under feedback.
+        revise_answer(
+            workspace,
+            "access_heavy_rain",
+            "The east lane washes out at the second bend.",
+            reason="Owner corrected the access location.",
+        )
+
+        # Fire the scheduled follow-ups now instead of waiting a week for them to come due.
+        # The wake rows, the compare-and-swap claim, the handler and the completion are the
+        # production ones; only the clock reading is moved forward, and the response says so.
+        rehearsal = runtime.scheduler_at_offset(NUDGE_AFTER.total_seconds() + 60)
+        fired: list[str] = []
+        for wake_id in workspace.get("wakes", []):
+            done = rehearsal.dispatch_wake(
+                wake_id,
+                lambda wake: autonomy.advance_on_wake(
+                    workspace, wake.kind, outstanding=outstanding_ids(workspace)
+                ),
+            )
+            if done is not None:
+                fired.append(done.kind)
+
+        workspace["outstanding"] = outstanding_ids(workspace)
+        store.put(workspace)
+        view = public_view(workspace)
+        return {
+            "workspace_id": workspace["workspace_id"],
+            "resume_url": f"/?workspace={workspace['workspace_id']}",
+            "elapsed_ms": round((time.perf_counter() - started) * 1000, 1),
+            "questions_asked_by_the_agent": asked,
+            "scheduled_actions_fired": fired,
+            "clock": "simulated for this rehearsal; production wakes run on Cloud Scheduler",
+            "autonomy_proof": view["autonomy_proof"],
+            "context_meter": view["context_meter"],
+            "plan": view["plan"],
+            "evidence_ledger": view["evidence_ledger"],
+            "mapping": view["mapping"],
+            "disclosure": [DRAFT_DISCLOSURE, SCREENING_DISCLOSURE],
+            "synthetic_owner_answers": True,
+        }
 
     @router.get("/proof")
     def proof() -> dict[str, Any]:
@@ -312,6 +426,69 @@ def build_router(store: WorkspaceStore) -> APIRouter:
             "every rendered section exposes its evidence class",
             all(row["rendered_from_evidence"] for row in adapted["evidence_ledger"]),
         )
+
+        # The autonomy receipt must be derived from what happened, not from a description.
+        receipt = adapted["autonomy_proof"]
+        check(
+            "the run records more automatic steps than authority steps",
+            receipt["automatic_agent_steps"] > receipt["human_authority_steps"],
+        )
+        check(
+            "no system decision is taken over reserved authority",
+            receipt["system_decisions_over_reserved_authority"] == 0
+            and len(receipt["authority_reserved"]) == len(autonomy.RESERVED_AUTHORITY),
+        )
+        check(
+            "the source conflict is derived from the sources, not hardcoded",
+            any(step["step"] == "source_conflict_detected" for step in receipt["timeline"]),
+        )
+        agreeing = create_workspace(
+            facts=[
+                {
+                    "key": "dam_height_ft",
+                    "value": 28,
+                    "quoted_text": "MAX. EMBANKMENT HT. 28 FT",
+                    "confidence": 0.9,
+                    "provenance": "recorded_gemini_drawing_extraction",
+                }
+            ]
+        )
+        check(
+            "a drawing that agrees with the registry raises no conflict question",
+            not any(fact.get("status") == "conflict" for fact in agreeing["facts"]),
+        )
+
+        # The context meter has to be capable of reporting failure, or it proves nothing.
+        loaded = create_workspace()
+        record_answer(loaded, "access_heavy_rain", "detail " * 400)
+        check(
+            "the context meter can report a budget breach",
+            not context_meter(loaded)["within_bound"],
+        )
+        empty_sessions = create_workspace()
+        first = context_meter(empty_sessions)["structured_context_tokens"]
+        for _ in range(10):
+            resume(empty_sessions)
+        check(
+            "measured context does not grow with empty sessions",
+            context_meter(empty_sessions)["structured_context_tokens"] == first,
+        )
+
+        # Identifiers in an owner answer must not reach the model boundary.
+        shielded = create_workspace()
+        record_answer(
+            shielded, "emergency_manager", "Call the duty desk on 555-318-2299 or duty@example.gov."
+        )
+        boundary = assemble_context(shielded)
+        check(
+            "owner identifiers do not cross the model boundary",
+            "555-318-2299" not in boundary and "duty@example.gov" not in boundary,
+        )
+        check(
+            "the owner keeps the verbatim answer in their own workspace",
+            "555-318-2299" in shielded["answers"]["emergency_manager"]["answer"],
+        )
+
         passed = sum(row["pass"] for row in checks)
         return {
             "passed": passed,
@@ -352,12 +529,46 @@ def build_router(store: WorkspaceStore) -> APIRouter:
                 },
                 {
                     "rule": "autonomous high-value action over simple chat",
-                    "implementation": "structured facts, plan sections, mapping gate, verifier",
-                    "test": "tests/test_routes.py::test_end_to_end_partner_flow",
+                    "implementation": "downstream/autonomy.py: open_run and autonomy_proof",
+                    "test": "tests/test_autonomy.py::test_opening_a_workspace_runs_a_sequence_with_no_human_step",
+                },
+                {
+                    "rule": "asynchronous background execution over long timelines",
+                    "implementation": "spine/wake.py plus service/internal_routes.py: /internal/scan-due",
+                    "test": "tests/test_internal_routes.py::test_a_due_wake_is_dispatched_and_changes_the_stored_workspace",
+                },
+                {
+                    "rule": "the whole workflow is demonstrable in one request",
+                    "implementation": "service/routes.py: /downstream/demo/run",
+                    "test": "tests/test_demo_run.py::test_one_request_reaches_a_reviewable_draft",
+                },
+                {
+                    "rule": "identifiers are pseudonymised before any model boundary",
+                    "implementation": "downstream/partner.py: shield, over spine/redact.py",
+                    "test": "tests/test_redact.py::test_all_identifier_kinds_are_removed",
+                },
+                {
+                    "rule": "untrusted document text cannot issue instructions",
+                    "implementation": "downstream/live_model.py over spine/untrusted.py",
+                    "test": "tests/test_live_model.py::test_an_instruction_shaped_span_cannot_ground_a_fact",
+                },
+                {
+                    "rule": "public writes and key issuance carry abuse ceilings",
+                    "implementation": "spine/quota.py, applied in routes and developer access",
+                    "test": "tests/test_demo_run.py::test_the_public_route_is_capped_per_network",
+                },
+                {
+                    "rule": "the page reports the stack the process actually has",
+                    "implementation": "service/runtime.py: Runtime.stack, served at /stack",
+                    "test": "tests/test_live_stack.py::test_the_badge_hardcodes_no_service_names_at_all",
                 },
             ],
             "limitations": [
-                "The demo authoring fixture is synthetic.",
+                "The demo authoring fixture and its owner answers are synthetic.",
+                "Gemma runs from a graded recording, never live.",
+                "The one-request rehearsal moves a simulated clock so a wake due in three days "
+                "can fire inside it. The wake, claim, handler and completion are the production "
+                "ones; only the clock reading changes.",
                 "No inundation boundary or evacuation zone is generated.",
                 "The draft is not approved, certified, submitted, or engineering advice.",
             ],

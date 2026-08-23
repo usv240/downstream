@@ -10,42 +10,48 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from downstream.store import FirestoreWorkspaceStore, MemoryWorkspaceStore
-from service.routes import build_router
 from service.beta_routes import build_beta_router
+from service.internal_routes import build_internal_router
+from service.routes import build_router
+from service.runtime import build_runtime
 from spine.api_access import ApiKeyAuthenticator
-from spine.api_key_store import FirestoreApiKeyStore, MemoryApiKeyStore
+from spine.config import PINNED_REGION, RegionViolation
 from spine.developer_access import KeyIssuer, build_developer_router
 
-PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", "local")
-USE_FIRESTORE = os.environ.get("USE_FIRESTORE", "").lower() in {"1", "true", "yes"}
+REGION = os.environ.get("GOOGLE_CLOUD_REGION", os.environ.get("REGION", PINNED_REGION)).strip()
+if REGION and REGION != PINNED_REGION:
+    # Data sovereignty is a stated property of this system. A deployment configured outside the
+    # pinned region fails to boot rather than quietly contradicting the claim.
+    raise RegionViolation(
+        f"region is {REGION!r} but every stored resource must be in {PINNED_REGION!r}."
+    )
 
-if USE_FIRESTORE:
-    from google.cloud import firestore
-
-    firestore_client = firestore.Client(project=PROJECT)
-    workspace_store = FirestoreWorkspaceStore(firestore_client)
-    developer_key_store = FirestoreApiKeyStore(firestore_client, "downstream")
-    persistence = "firestore"
-else:
-    workspace_store = MemoryWorkspaceStore()
-    developer_key_store = MemoryApiKeyStore("downstream")
-    persistence = "memory-local"
+runtime = build_runtime()
 
 app = FastAPI(
     title="Downstream",
     description="A stateful Emergency Action Plan drafting partner with explicit safety gates.",
-    version="0.1.0",
+    version="0.2.0",
 )
-app.include_router(build_router(workspace_store))
-beta_auth = ApiKeyAuthenticator.from_environment(dynamic_lookup=developer_key_store.get)
+app.include_router(build_router(runtime))
+
+beta_auth = ApiKeyAuthenticator.from_environment(dynamic_lookup=runtime.api_keys.get)
 key_issuer = KeyIssuer.from_environment(
-    developer_key_store, product="downstream", scope="downstream:use", prefix="ds_beta"
+    runtime.api_keys, product="downstream", scope="downstream:use", prefix="ds_beta"
 )
-app.include_router(build_beta_router(workspace_store, beta_auth))
-app.include_router(build_developer_router(
-    key_issuer, beta_auth, product="Downstream", scope="downstream:use"
-))
+app.include_router(build_beta_router(runtime, beta_auth))
+app.include_router(
+    build_developer_router(
+        key_issuer,
+        beta_auth,
+        product="Downstream",
+        scope="downstream:use",
+        issuance_quota=runtime.key_issuance_quota,
+        attempt_quota=runtime.invitation_attempt_quota,
+        policy=runtime.policy,
+    )
+)
+app.include_router(build_internal_router(runtime))
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 app.mount("/static", StaticFiles(directory=WEB), name="static")
@@ -56,13 +62,27 @@ def health() -> dict[str, Any]:
     return {
         "ok": True,
         "project": "downstream",
-        "google_cloud_project": PROJECT,
-        "persistence": persistence,
+        "google_cloud_project": runtime.project,
+        "region": PINNED_REGION,
+        "persistence": runtime.persistence,
         "synthetic_demo": True,
         "inundation_extent": "not_generated",
         "beta_api": "configured" if beta_auth.enabled else "not_provisioned",
-        "developer_key_issuance": "invite_only" if key_issuer.enabled else "disabled",
+        # Report the mode itself. Deriving a label from `enabled` here said "invite_only" while
+        # /developer/config correctly said "open", which is precisely the kind of drift this
+        # project asserts it does not have.
+        "developer_key_issuance": key_issuer.mode,
+        "model_execution": runtime.drawing.mode,
+        "tracing": "cloud_trace" if runtime.tracing_active else "inactive",
+        "wake_durability": runtime.wake_durability,
+        "scheduled_wakes": "cloud_scheduler_calls_/internal/scan-due",
     }
+
+
+@app.get("/stack")
+def stack() -> dict[str, Any]:
+    """What this process is actually using. The live-stack badge renders exactly this."""
+    return runtime.stack()
 
 
 @app.get("/", include_in_schema=False)

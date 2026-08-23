@@ -1,27 +1,82 @@
-flowchart LR
-    API[Approved API client] --> K[Hash-only API key and server-derived tenant]
-    K --> R[Live NID record lookup]
-    NID[USACE NID FeatureServer] --> R
-    J[Public synthetic judge console] --> FACTS[Provenance-bearing facts]
-    IMG[Synthetic legacy drawing] --> G[Vertex AI Gemini 3.5 Flash]
-    G --> Q[Transcription and quote gate]
-    R --> FACTS
-    Q --> FACTS
-    FACTS --> X{Sources conflict?}
-    X -->|yes| P[Targeted clarification]
-    X -->|no| DB[(Tenant-owned Firestore workspace)]
-    K --> P
-    OWNER[Owner, many short sessions] <--> P
-    P --> H[Versioned answer history]
-    H <--> DB
-    DB --> M[Bounded memory and profile]
+flowchart TB
+    subgraph triggers["Triggers — a run starts from an event, not a button"]
+        direction LR
+        J[Public judge console]
+        API[Approved API client]
+        SCHED[Cloud Scheduler cron]
+    end
+
+    subgraph resolve["Resolve — the agent's own authority"]
+        direction TB
+        R["Registry record lookup<br/><small>USACE NID FeatureServer</small>"]
+        G["Vertex AI Gemini 3.5 Flash<br/><small>live call; replays the graded<br/>recording on error or daily cap</small>"]
+        U["Untrusted-text gate<br/><small>quarantines instruction-shaped spans</small>"]
+        Q["Quote gate<br/><small>a fact must quote the transcription</small>"]
+        G --> U --> Q
+    end
+
+    subgraph decide["Decide — where the agent stops"]
+        direction TB
+        X{"Drawing disagrees<br/>with registry?"}
+        P["Targeted clarification<br/><small>one question, with both values</small>"]
+        MAP{"Mapping applicability<br/>proven?"}
+        STOP["Safe stop<br/><small>flow path only, no extent</small>"]
+        X -->|yes| P
+        MAP -->|no| STOP
+    end
+
+    subgraph state["State — Firestore, durable across weeks"]
+        direction TB
+        DB[("Workspaces · wakes<br/>API keys · quota counters")]
+        W["Durable wake ladder<br/><small>claim-once · bounded retry · dead letter</small>"]
+        H["Versioned answer history"]
+        RED["Redaction gate<br/><small>model-safe form of each answer</small>"]
+        M["Measured context budget"]
+        DB <--> W
+        DB --- H
+        RED --> M
+    end
+
+    subgraph compose["Compose — every section names its evidence"]
+        direction TB
+        C["Section composer"]
+        L["Evidence ledger<br/><small>owner answer · published requirement<br/>· fail-closed policy</small>"]
+        DRAFT["Reviewable EAP draft"]
+        C --> L --> DRAFT
+    end
+
+    K["Hash-only API key<br/>server-minted tenant"]
+    OWNER["Owner<br/><small>many short sessions</small>"]
+    REQ["FEMA and ASDSO passages"]
+    UI["Cloud Run web app · /v1 API<br/>autonomy receipt · /stack"]
+    OBS[["OpenTelemetry spans → Cloud Trace"]]
+
+    J --> resolve
+    API --> K --> resolve
+    SCHED -->|POST /internal/scan-due| W
+
+    R --> X
+    Q --> X
+    X -->|no| C
+    P --> H
+    P --> RED
     M --> P
-    DB --> C[Section composer]
-    REQ[FEMA and ASDSO passages] --> V[Verifier]
-    C --> V
-    V --> L[Section evidence ledger]
-    MAP[Mapping applicability gate] -->|unproven| STOP[Safe stop, flow path only]
+    W -->|reopens held questions| P
+    OWNER -->|reserved authority| P
+    H --> C
+    REQ --> C
+    MAP -.-> C
     STOP --> L
-    L --> DRAFT[Reviewable EAP draft]
-    DRAFT --> UI[Accessible Cloud Run web app and API]
+    DRAFT --> UI
     UI -->|owner correction| P
+    OBS -.- resolve
+
+    classDef gate fill:#fff4e6,stroke:#d9822b,color:#5c3b00
+    classDef stop fill:#ffe9e9,stroke:#c0392b,color:#5c0000
+    class U,Q,RED,MAP gate
+    class STOP stop
+    style triggers fill:#f7f9fc,stroke:#c3cfe0,color:#33445c
+    style resolve fill:#f7f9fc,stroke:#c3cfe0,color:#33445c
+    style decide fill:#f7f9fc,stroke:#c3cfe0,color:#33445c
+    style state fill:#f7f9fc,stroke:#c3cfe0,color:#33445c
+    style compose fill:#f7f9fc,stroke:#c3cfe0,color:#33445c

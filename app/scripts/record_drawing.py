@@ -18,7 +18,6 @@ def main() -> int:
     raw = raw_client.extract(image)
     recording = ROOT / "cedar_hollow_drawing.recording.json"
     recording.write_text(json.dumps(raw, indent=2), encoding="utf-8")
-    DrawingReader(raw_client.__class__.__new__(raw_client.__class__))
     # Grade the recorded output through replay, avoiding a second paid call.
     from downstream.reader import DrawingReplayClient
 

@@ -1,8 +1,9 @@
 """Runtime configuration.
 
-Region pinning is enforced here rather than by convention. `assert_region_pinned()` is called
-at process start and by a test, so a resource created outside the declared region fails the
-build rather than quietly violating the data sovereignty claim in the design.
+Region pinning is enforced here rather than by convention. `load_settings()` calls
+`assert_region_pinned()`, and `service/main.py` calls it at process start, so a deployment
+configured outside the declared region fails to boot rather than quietly violating the data
+sovereignty claim in the design.
 """
 
 from __future__ import annotations
@@ -49,7 +50,8 @@ class Settings:
     # Model selection. Flash by default, Pro only where the design says so.
     model_flash: str = "gemini-3.5-flash"
     model_pro: str = "gemini-3.1-pro-preview"
-    model_redact: str = "gemma3"
+    # Verified 2026-08-08: only the `-maas` publisher id is callable, and only from `global`.
+    model_redact: str = "gemma-4-26b-a4b-it-maas"
     model_location: str = MODEL_LOCATION
 
     # Lease held by a worker while it processes a wake, in seconds.
