@@ -453,3 +453,8 @@
 @media (max-width: 900px) {
   .console-grid, .api-quickpeek { grid-template-columns: 1fr; }
 }
+
+/* The context comparison. A bounded number means nothing on its own; the multiple against naive
+   transcript replay is the claim worth reading. */
+.context-compare { display: block; margin-top: 6px; font-size: .78rem; }
+.context-compare b { font-size: .82rem; }

@@ -108,11 +108,22 @@ function renderProgress(workspace) {
 
   const meter = workspace.context_meter;
   const pct = Math.min(100, Math.round((meter.structured_context_tokens / meter.bound) * 100));
+  // The comparison is the point, not the absolute number. A bounded context is only interesting
+  // against what the naive alternative would have cost, so show both and the multiple.
+  const saved = meter.estimated_transcript_replay_tokens;
+  const times = saved && meter.structured_context_tokens
+    ? (saved / meter.structured_context_tokens).toFixed(1)
+    : null;
   $("#context-meter").innerHTML =
     "<b>" + meter.structured_context_tokens + " / " + meter.bound + " tokens</b>" +
     '<div class="meter"><div class="meter-track" role="meter" aria-label="Structured context use" aria-valuemin="0" aria-valuemax="' +
     meter.bound + '" aria-valuenow="' + meter.structured_context_tokens + '"><div class="meter-fill" style="width:' +
-    pct + '%"></div></div><span>' + text(meter.method) + "</span></div>";
+    pct + '%"></div></div>' +
+    (times
+      ? '<span class="context-compare"><b>' + times + '&times; smaller</b> than replaying the transcript, which would send ' +
+        saved + " tokens</span>"
+      : "") +
+    "<span>" + text(meter.method) + "</span></div>";
 }
 
 function conflictEvidence(question) {
