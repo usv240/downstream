@@ -183,3 +183,38 @@ def test_the_correction_example_carries_an_identifier_so_the_boundary_is_visible
     assert "PHONE" in shielded["shapes"]
     assert "406-555-0142" not in shielded["text"]
     assert "PHONE_1" in shielded["text"]
+
+
+def test_the_hidden_attribute_actually_hides():
+    """`[hidden]` only carries display:none from the user-agent sheet, so `.profile-grid`
+    setting `display: grid` beat it and the panel stayed on screen while the DOM property read
+    true. Checking the property rather than the rendering is how that survived."""
+    css = (WEB / "downstream-v2.css").read_text(encoding="utf-8")
+    assert "[hidden] { display: none !important; }" in css
+
+
+def test_a_cold_visitor_is_not_shown_six_empty_panels():
+    """The scaffolding is evidence of a run. Before there is one it reported "nothing yet" in six
+    places and pushed the one action worth taking below the fold."""
+    html = (WEB / "downstream.html").read_text(encoding="utf-8")
+    for hidden in ('id="console-shell" hidden', 'id="profile-grid" hidden', 'id="autonomy-pane" hidden'):
+        assert hidden in html, hidden
+    assert 'id="console-empty"' in html
+
+
+def test_the_strongest_action_is_the_first_one_offered():
+    html = (WEB / "downstream.html").read_text(encoding="utf-8")
+    actions = html[html.index('class="workspace-actions"'):]
+    actions = actions[: actions.index("</div>")]
+    assert "Run the whole thing in one request" in actions
+    assert actions.index("Run the whole thing") < actions.index("Answer the questions myself")
+    assert 'class="btn-primary"' in actions.split("Run the whole thing")[0][-120:]
+
+
+def test_every_entry_point_into_a_run_reveals_the_console():
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert "function revealConsole()" in js
+    # render() is the single funnel every path goes through.
+    assert js.index("revealConsole();") > js.index("function render(workspace")
+    for control in ("#run-top", "#run-empty", "#start-empty"):
+        assert control in js, control

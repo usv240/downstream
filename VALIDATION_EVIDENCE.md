@@ -7,7 +7,7 @@ partly off in the deployed configuration, that is stated rather than rounded up.
 
 | Check | Command | Result |
 |---|---|---|
-| Test suite | `python -m pytest -q` | 348 passed |
+| Test suite | `python -m pytest -q` | 352 passed |
 | Lint | `python -m ruff check .` | clean |
 | Accessibility, both themes | `python scripts/check_a11y.py` | all checks passed |
 | Executable judge flow | `python scripts/downstream_demo_flow.py --url <base>` | 63/63 |

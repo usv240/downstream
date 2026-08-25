@@ -513,3 +513,27 @@
 #live-proof-status { margin: 10px 0 0; }
 #live-proof-status.armed { color: var(--warn); }
 #live-proof-status.fired { color: var(--ok); font-weight: 600; }
+
+/* ---------------------------------------------------------------- console empty state
+   Six panels each reporting that nothing had happened yet is a lot of furniture for no
+   information, and it pushed the one action worth taking below the fold. One invitation
+   instead, and the scaffolding appears when there is something to put in it. */
+.console-empty {
+  margin-top: 16px; padding: 30px 32px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--shadow-soft);
+}
+.console-empty h3 { font-size: 1.5rem; margin: 4px 0 10px; letter-spacing: -.02em; }
+.console-empty p { max-width: 76ch; }
+.console-empty .btn-row { margin-bottom: 0; }
+@media (max-width: 640px) { .console-empty { padding: 22px 20px; } }
+
+/* The `hidden` attribute only carries `display: none` from the user-agent stylesheet, so any
+   author rule that sets display -- `.profile-grid { display: grid }`, `.pane { display: block }`
+   -- silently wins and the element stays on screen. The DOM property reads true the whole time,
+   which is exactly how this got missed. */
+[hidden] { display: none !important; }
+
+/* An empty status bar restating the invitation below it is one more panel reporting nothing.
+   Collapsed rather than removed, so the live region exists before it is first updated. */
+.app-status.is-idle { display: none; }

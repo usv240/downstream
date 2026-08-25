@@ -44,7 +44,10 @@ function text(value) {
 
 function setStatus(message, tone = "neutral") {
   const box = $("#app-status");
-  box.className = "app-status " + tone;
+  // Collapsed until there is something to report. It stays in the DOM so the live region is
+  // present before it is updated, which is what screen readers need, but an empty status bar
+  // repeating the invitation directly beneath it is just another panel saying nothing yet.
+  box.className = "app-status " + tone + (message ? "" : " is-idle");
   box.textContent = message;
 }
 
@@ -365,7 +368,20 @@ function renderAutonomy(workspace) {
     .join("");
 }
 
+function revealConsole() {
+  // The scaffolding is evidence of a run. Before there is one it was six panels each saying
+  // "nothing yet", which is a lot of furniture for no information and buried the one action
+  // worth taking.
+  const empty = $("#console-empty");
+  if (empty) empty.hidden = true;
+  ["#console-shell", "#profile-grid", "#autonomy-pane"].forEach((selector) => {
+    const node = $(selector);
+    if (node) node.hidden = false;
+  });
+}
+
 function render(workspace, options = {}) {
+  revealConsole();
   state.workspace = workspace;
   syncWorkspaceIdentity(workspace);
   renderProgress(workspace);
@@ -609,6 +625,10 @@ async function armLiveProof() {
 $("#arm-live-proof").addEventListener("click", armLiveProof);
 $("#start-demo").addEventListener("click", start);
 $("#run-whole-thing").addEventListener("click", runWholeThing);
+// The same two actions, offered where a cold visitor actually looks: the console header and the
+// empty state itself, rather than only in a panel below the fold.
+["#run-top", "#run-empty"].forEach((s) => $(s)?.addEventListener("click", runWholeThing));
+$("#start-empty")?.addEventListener("click", start);
 $("#load-nid").addEventListener("click", loadNid);
 $("#accept-plan").addEventListener("click", () => feedback("accept"));
 $("#less-detail").addEventListener("click", () => feedback("not_right", "Too much detail"));
@@ -630,5 +650,5 @@ if (requestedWorkspace) {
 } else if (state.guided) {
   start();
 } else {
-  setStatus("Choose a clean workspace or the guided judge tour to begin.", "neutral");
+  setStatus("");
 }
