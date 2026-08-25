@@ -218,3 +218,72 @@ def test_every_entry_point_into_a_run_reveals_the_console():
     assert js.index("revealConsole();") > js.index("function render(workspace")
     for control in ("#run-top", "#run-empty", "#start-empty"):
         assert control in js, control
+
+
+def test_the_run_says_what_it_is_doing_without_faking_progress():
+    """The run is one server-side call the page cannot observe midway.
+
+    Stating what was asked for is honest. Animating steps the page has not seen happen would be
+    theatre, and the timeline underneath already reports the truth with real timestamps.
+    """
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert 'id="run-plan"' in (WEB / "downstream.html").read_text(encoding="utf-8")
+    plan = js[js.index("async function runWholeThing"):]
+    plan = plan[: plan.index('$("#arm-live-proof")')]
+    assert "Running one request. It will:" in plan
+    assert "read the 1958 drawing with Gemini" in plan
+
+
+def test_the_timeline_opens_itself_and_names_each_step_in_plain_words():
+    """Collapsed, the strongest evidence in the product was a number on a tile."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert "STEP_TITLES" in js
+    assert "wrap.open = true" in js
+    for step, title in [
+        ("drawing_read", "Read the 1958 drawing with Gemini"),
+        ("source_conflict_detected", "Noticed two sources disagree"),
+        ("paused_for_reserved_authority", "Stopped at owner knowledge"),
+    ]:
+        assert f'{step}: "{title}"' in js, step
+
+
+def test_every_recorded_step_kind_has_a_plain_language_title():
+    """A step with no title falls back to an identifier with the underscores taken out."""
+    import re
+
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    titled = set(re.findall(r"^  (\w+): \"", js[js.index("const STEP_TITLES"):], re.M))
+
+
+    source = (Path(__file__).resolve().parents[1] / "downstream" / "autonomy.py").read_text(
+        encoding="utf-8"
+    )
+    emitted = set(re.findall(r'record_step\(\s*workspace,\s*\w+,\s*"(\w+)"', source))
+    emitted.add("unattended_review_ran")  # written by advance_on_wake, not record_step
+    missing = {s for s in emitted if s and s not in titled}
+    assert not missing, f"steps with no plain-language title: {sorted(missing)}"
+
+
+def test_the_correction_loop_is_not_buried_in_a_scrolling_column():
+    """It lived inside the middle pane, which scrolls to fit a viewport.
+
+    That put the one control the judge path tells you to use below the fold of a region nobody
+    had reason to think was scrollable. It is a full-width band under the three panes now.
+    """
+    html = (WEB / "downstream.html").read_text(encoding="utf-8")
+    assert 'class="revision-dock"' in html
+
+    shell = html[html.index('class="partner-shell"'): html.index('class="revision-dock"')]
+    assert 'id="revision-card"' not in shell, "the correction card must sit outside the panes"
+
+    dock = html[html.index('class="revision-dock"'):]
+    assert 'id="revision-card"' in dock[: dock.index("</div>") + 400]
+
+
+def test_the_correction_dock_does_not_split_labels_from_their_fields():
+    """A two-column grid auto-placed each child into the next cell, so every label landed in one
+    column and its own field in the other. Constraining width does the same job and cannot come
+    apart; pairing them in a grid would need a wrapper per field."""
+    css = (WEB / "downstream-v2.css").read_text(encoding="utf-8")
+    dock = css[css.index(".revision-dock {"):]
+    assert "grid-template-columns" not in dock.split("@media (max-width")[0]

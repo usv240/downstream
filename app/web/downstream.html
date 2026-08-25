@@ -55,9 +55,11 @@
 
       <div class="console-shell" id="console-shell" hidden style="margin-top:16px"><div class="partner-shell">
         <aside class="pane"><h3>Plan progress</h3><p class="small muted" id="progress-copy">Start the preset to create a durable workspace.</p><ol class="progress-list" id="progress-list"></ol><h3 class="subhead">Context meter</h3><div id="context-meter" class="muted small">No session yet.</div><div id="workspace-identity" class="workspace-identity" hidden><h3 class="subhead">Saved workspace</h3><code id="workspace-code"></code><p class="small muted">Restores this workspace after a refresh.</p><div class="workspace-link-row"><a id="resume-url" href="#workspace">Open resume link</a><button id="copy-resume" type="button">Copy</button></div></div></aside>
-        <section class="pane" style="padding:0;border:0;box-shadow:none;background:transparent"><article class="question-card" id="question-card"><span class="eyebrow">Partner waiting</span><h3>Start a clean preset.</h3><p>I will resolve three drawing facts first, turn the source conflict into a targeted question, and ask only what the fixture cannot answer.</p></article><article class="revision-card" id="revision-card"><span class="eyebrow">Correction loop</span><h3>Your corrections stay attributable.</h3><p class="muted small">After the first answer, revise it here. Downstream keeps both versions and updates the draft.</p></article></section>
+        <section class="pane" style="padding:0;border:0;box-shadow:none;background:transparent"><article class="question-card" id="question-card"><span class="eyebrow">Partner waiting</span><h3>Start a clean preset.</h3><p>I will resolve three drawing facts first, turn the source conflict into a targeted question, and ask only what the fixture cannot answer.</p></article></section>
         <aside class="pane"><h3>Reviewable draft</h3><div class="plan-stack" id="plan-stack"><p class="muted small">Sections appear as owner facts arrive.</p></div><div class="btn-row"><button id="accept-plan" data-action type="button" disabled>Accept style</button><button id="less-detail" data-action type="button" disabled>Use concise summaries</button></div></aside>
-      </div></div>
+      </div>
+      <div class="revision-dock"><article class="revision-card" id="revision-card"><span class="eyebrow">Correction loop</span><h3>Your corrections stay attributable.</h3><p class="muted small">After the first answer, revise it here. Downstream keeps both versions and updates the draft.</p></article></div>
+      </div>
       <div class="profile-grid" id="profile-grid" hidden style="margin-top:14px"><div class="profile-item"><small>Reading level</small><b>Not learned yet</b></div><div class="profile-item"><small>Detail style</small><b>Not learned yet</b></div><div class="profile-item"><small>Vocabulary</small><b>No preferences yet</b></div><div class="profile-item"><small>Sessions remembered</small><b>0</b></div><div class="profile-item"><small>Feedback events</small><b>0</b></div><div class="profile-item"><small>Answer revisions</small><b>0</b></div><div class="profile-item"><small>Source conflicts surfaced</small><b>1</b></div></div>
 
       <article class="pane autonomy-pane" id="autonomy-pane" hidden style="margin-top:14px">
@@ -72,6 +74,7 @@
           </div>
         </div>
         <div class="profile-grid" id="autonomy-grid"><div class="profile-item"><small>Automatic agent steps</small><b>0</b></div><div class="profile-item"><small>Owner authority steps</small><b>0</b></div><div class="profile-item"><small>Continue clicks required</small><b>0</b></div><div class="profile-item"><small>Durable wakes registered</small><b>0</b></div></div>
+        <div class="run-plan" id="run-plan" hidden></div>
         <p class="small muted" id="autonomy-waiting">Start the preset to open a run.</p>
 
         <div class="live-proof" id="live-proof">

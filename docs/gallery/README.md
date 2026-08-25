@@ -12,6 +12,7 @@ mock-up.
 | `04-judge-evidence.png` | The judge page: measured gates and the claim boundaries |
 | `05-developer-console.png` | Self-service key issuance and the in-browser API console |
 | `06-console-empty.png` | What a cold visitor sees: one invitation, not six empty panels |
+| `07-correction-dock.png` | The correction loop, full width under the panes rather than inside one |
 
 The rules say judges may choose to score on the text description, images and video alone. These
 exist so that a repository nobody runs still shows the product working.

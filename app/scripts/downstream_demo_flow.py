@@ -332,6 +332,16 @@ def main() -> int:
     identifiers = api.call("GET", "/downstream/nid/search?limit=1&state=IA")["records"]
     nid = identifiers[0]["NIDID"] if identifiers else None
     check("a live public identifier is discoverable", bool(nid))
+    if not nid:
+        # The federal service is outside this project and does go quiet occasionally. Reporting
+        # that plainly is right; carrying on and posting a null identifier turned one external
+        # blip into a 422 traceback that looked like this service was broken.
+        print("SKIP  the authenticated workspace checks need an identifier from the public service")
+        api.call("DELETE", "/v1/key", key=second["api_key"])
+        api.call("DELETE", "/v1/key", key=key)
+        print(f"\n{sum(checks)}/{len(checks)} Downstream demo checks passed against {args.url}")
+        print("Some checks were skipped because the USACE service did not answer.")
+        return 0 if all(checks) else 1
 
     owned = api.call("POST", "/v1/workspaces", {"nid_id": nid}, key=key)
     api_workspace = owned["workspace_id"]

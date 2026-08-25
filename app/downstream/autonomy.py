@@ -18,6 +18,7 @@ and the run pauses only for owner knowledge or for evidence that must come from 
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -96,7 +97,7 @@ def open_run(
     workspace: dict[str, Any],
     *,
     trigger: str,
-    outstanding: list[str],
+    outstanding: list[str] | Callable[[dict[str, Any]], list[str]],
     drawing: Any | None = None,
     registry_source: dict[str, Any] | None = None,
     scheduler: Any | None = None,
@@ -142,9 +143,14 @@ def open_run(
             AGENT,
             "drawing_read",
             (
-                "Read the legacy drawing with Gemini 3.5 Flash on Vertex AI."
+                # The model call happens before the first step is recorded, so the timeline's own
+                # offsets cannot show it. Without this the steps read as 0.3s while the request
+                # took six seconds, and the two numbers appear to contradict each other.
+                f"Read the legacy drawing with Gemini 3.5 Flash on Vertex AI, in "
+                f"{drawing.elapsed_ms / 1000:.1f}s."
                 if drawing.was_live
-                else "Replayed the graded Gemini 3.5 Flash drawing recording."
+                else f"Replayed the graded Gemini 3.5 Flash drawing recording, in "
+                f"{drawing.elapsed_ms / 1000:.1f}s."
             ),
             **drawing.receipt(),
         )
@@ -205,16 +211,21 @@ def open_run(
     if scheduler is not None:
         register_wakes(workspace, scheduler)
 
-    workspace["outstanding"] = list(outstanding)
+    # Resolved here, not by the caller. The question set depends on the facts this run has just
+    # grounded -- a drawing that agrees with the registry raises one fewer -- so a list computed
+    # before the run is always the wrong one. It used to be passed in empty and overwritten
+    # afterwards, which left the step itself reporting that it had paused on nothing.
+    resolved = outstanding(workspace) if callable(outstanding) else list(outstanding)
+    workspace["outstanding"] = resolved
     record_step(
         workspace,
         AGENT,
         "paused_for_reserved_authority",
         (
-            f"Composed every section that has evidence and paused on {len(outstanding)} owner "
+            f"Composed every section that has evidence and paused on {len(resolved)} owner "
             "questions, which is knowledge the agent is not permitted to invent."
         ),
-        outstanding=outstanding,
+        outstanding=resolved,
     )
     workspace["updated_at"] = utc_now()
     return workspace

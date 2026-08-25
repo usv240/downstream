@@ -537,3 +537,52 @@
 /* An empty status bar restating the invitation below it is one more panel reporting nothing.
    Collapsed rather than removed, so the live region exists before it is first updated. */
 .app-status.is-idle { display: none; }
+
+/* What the request was asked to do, shown while it does it. Not a progress bar: the run is one
+   server-side call the page cannot observe midway, and a fake step animation would be theatre.
+   The timeline underneath reports what actually happened, with real timestamps. */
+.run-plan {
+  margin: 12px 0; padding: 14px 16px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
+}
+.run-plan ol { margin: 8px 0 8px 18px; padding: 0; }
+.run-plan li { font-size: .86rem; margin-bottom: 3px; }
+
+/* One step of the recorded run. Number, actor, offset, what it was, why. */
+.timeline-step {
+  grid-template-columns: auto auto auto 1fr;
+  align-items: baseline;
+}
+.step-n {
+  /* Was surface-2 on a light card with muted text: barely legible at any size, and it is the
+     thing that tells a reader these are ordered. */
+  grid-row: span 2; align-self: start; min-width: 22px; height: 22px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--text); color: var(--surface); border: 1px solid var(--text);
+  font-size: .68rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.step-at { color: var(--text-muted); font-size: .7rem; font-variant-numeric: tabular-nums; }
+.step-what { font-weight: 620; font-size: .88rem; }
+.step-detail { grid-column: 2 / -1; color: var(--text-muted); font-size: .8rem; }
+
+/* The correction loop sat inside the middle column, which scrolls. That put the one control a
+   judge is told to use below the fold of a pane, reachable only by scrolling a region they had
+   no reason to think was scrollable. It is a full-width band under the three panes now: always
+   visible, and it reads as what it is -- an action on the draft above it rather than a footnote
+   to the current question. */
+.revision-dock {
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.revision-dock .revision-card { margin: 0; }
+.revision-dock .revision-card > .control,
+.revision-dock .revision-card > select,
+.revision-dock .revision-card > textarea,
+.revision-dock .revision-card > input,
+.revision-dock .revision-card > .answer-history,
+.revision-dock .revision-card > div:not(.btn-row) { max-width: 720px; }
+/* Single column on purpose. A two-column grid here auto-placed each child into the next cell,
+   which put every label in one column and its own field in the other -- "Answer to revise" on the
+   left with its dropdown on the right. Pairing them would need a wrapper per field; constraining
+   the width gets the same result and cannot come apart. */
+.revision-dock .revision-card > label { display: block; margin-top: 12px; }
+.revision-dock .revision-card > .btn-row { margin-top: 16px; }

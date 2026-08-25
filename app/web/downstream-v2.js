@@ -338,6 +338,26 @@ function updatePersistentControls() {
   $("#less-detail").disabled = !enabled;
 }
 
+// The stored step name is an identifier. This is what it means, in the product's own words.
+const STEP_TITLES = {
+  run_triggered: "A run was triggered",
+  registry_record_resolved: "Resolved the dam record",
+  drawing_read: "Read the 1958 drawing with Gemini",
+  untrusted_spans_quarantined: "Quarantined instruction-shaped text",
+  facts_grounded: "Grounded every fact in a quote",
+  source_conflict_detected: "Noticed two sources disagree",
+  mapping_gate_applied: "Applied the mapping gate",
+  durable_wakes_registered: "Scheduled its own follow-ups",
+  paused_for_reserved_authority: "Stopped at owner knowledge",
+  owner_answer_recorded: "Owner supplied a fact",
+  sections_recomposed: "Recomposed the affected sections",
+  owner_correction_applied: "Owner corrected an answer",
+  held_questions_reopened: "Reopened a held question",
+  held_questions_reviewed: "Checked for held questions",
+  follow_up_recorded: "Recorded a follow-up",
+  unattended_review_ran: "Reviewed the draft unattended",
+};
+
 const STEP_LABELS = {
   agent: "Agent",
   human_authority: "Owner authority",
@@ -359,13 +379,33 @@ function renderAutonomy(workspace) {
     .join("");
   $("#autonomy-waiting").textContent =
     "Trigger: " + proof.trigger.replaceAll("_", " ") + ". Now waiting on " + proof.waiting_on + ".";
-  $("#autonomy-timeline").innerHTML = (proof.timeline || [])
-    .map((entry) =>
-      '<li class="timeline-step ' + entry.actor + '">' +
-      '<b>' + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
-      "<span>" + text(entry.detail) + "</span>" +
-      "<small>" + text(entry.step.replaceAll("_", " ")) + "</small></li>")
+  const timeline = proof.timeline || [];
+  const started = timeline.length ? Date.parse(timeline[0].at) : 0;
+  $("#autonomy-timeline").innerHTML = timeline
+    .map((entry, index) => {
+      // Elapsed since the trigger. The run takes about six seconds and a reader deserves to see
+      // where each step fell inside it, rather than a flat list that could have been written by
+      // hand afterwards.
+      const at = Date.parse(entry.at);
+      const offset = started && !Number.isNaN(at) ? ((at - started) / 1000).toFixed(1) + "s" : "";
+      return (
+        '<li class="timeline-step ' + entry.actor + '">' +
+        '<span class="step-n">' + (index + 1) + "</span>" +
+        '<b>' + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
+        '<span class="step-at">' + text(offset) + "</span>" +
+        '<span class="step-what">' + text(STEP_TITLES[entry.step] || entry.step.replaceAll("_", " ")) + "</span>" +
+        '<span class="step-detail">' + text(entry.detail) + "</span></li>"
+      );
+    })
     .join("");
+  // Open by default once there is a run. Collapsed, the strongest evidence in the product was a
+  // number on a tile and a control most people never click.
+  const wrap = $("#autonomy-timeline-wrap");
+  if (wrap && timeline.length) {
+    wrap.open = true;
+    wrap.querySelector("summary").textContent =
+      "The " + timeline.length + " steps, in the order they happened";
+  }
 }
 
 function revealConsole() {
@@ -539,7 +579,28 @@ function initTheme() {
 
 async function runWholeThing() {
   setBusy(true);
-  setStatus("Running the full sequence server-side. Nothing to click.", "neutral");
+  // What this request does, stated up front. Deliberately not a fake progress animation: the run
+  // is one server-side call and the page cannot observe it midway, so pretending to narrate live
+  // steps would be theatre. This says what was asked for; the timeline underneath says what
+  // actually happened, with real timestamps.
+  const panel = $("#run-plan");
+  if (panel) {
+    panel.hidden = false;
+    panel.innerHTML =
+      "<b>Running one request. It will:</b><ol>" +
+      [
+        "resolve the dam record",
+        "read the 1958 drawing with Gemini",
+        "quarantine anything shaped like an instruction",
+        "keep only facts it can quote",
+        "check the drawing against the registry",
+        "draft the sections it has evidence for",
+        "refuse the map it cannot justify",
+        "schedule its own follow-ups",
+      ].map((s) => "<li>" + s + "</li>").join("") +
+      "</ol><span class=\"small muted\">Then it stops and asks you the rest.</span>";
+  }
+  setStatus("Running server-side. Nothing to click.", "neutral");
   try {
     const result = await api("/downstream/demo/run", {method: "POST"});
     const workspace = await api("/downstream/workspaces/" + result.workspace_id);
@@ -551,7 +612,8 @@ async function runWholeThing() {
       "Owner answers were synthetic; the rehearsal clock was simulated.",
       "success",
     );
-    document.querySelector("#autonomy-pane").scrollIntoView({behavior: "smooth", block: "center"});
+    if (panel) panel.hidden = true;
+    document.querySelector("#autonomy-pane").scrollIntoView({behavior: "smooth", block: "start"});
   } catch (error) {
     setStatus(error.message, "error");
   } finally {

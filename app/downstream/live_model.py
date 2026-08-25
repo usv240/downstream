@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -46,6 +47,7 @@ class DrawingOutcome:
     dropped: list[str]
     execution: str
     model: str
+    elapsed_ms: float = 0.0
     quarantined: list[dict[str, str]] = field(default_factory=list)
     error: str | None = None
 
@@ -58,6 +60,7 @@ class DrawingOutcome:
             "execution": self.execution,
             "model": self.model,
             "live_inference": self.was_live,
+            "elapsed_ms": round(self.elapsed_ms, 1),
             "facts_kept": len(self.facts),
             "facts_dropped": self.dropped,
             "quarantined_spans": self.quarantined,
@@ -116,30 +119,40 @@ class DrawingService:
         return json.loads(path.read_text(encoding="utf-8"))
 
     def read(self) -> DrawingOutcome:
+        started = time.perf_counter()
         image = self._image()
 
         if not self.live_enabled:
-            return self._replay(image, REPLAY)
+            return self._replay(image, REPLAY, started=started)
 
         if self._quota is not None:
             verdict = self._quota.check("drawing_read")
             if not verdict.allowed:
-                return self._replay(image, REPLAY_AT_QUOTA)
+                return self._replay(image, REPLAY_AT_QUOTA, started=started)
 
         try:
             client = DrawingVertexClient(
                 project=self.project, location=self.location, model=self.model
             )
-            return self._grade(DrawingReader(client), image, LIVE)
-        except Exception as exc:
-            return self._replay(image, REPLAY_AFTER_ERROR, error=f"{type(exc).__name__}: {exc}")
+            return self._grade(DrawingReader(client), image, LIVE, started=started)
+        except Exception as exc:  # a model outage falls back, it does not 500
+            return self._replay(
+                image, REPLAY_AFTER_ERROR, error=f"{type(exc).__name__}: {exc}", started=started
+            )
 
-    def _replay(self, image: bytes, execution: str, error: str | None = None) -> DrawingOutcome:
+    def _replay(
+        self, image: bytes, execution: str, error: str | None = None, started: float | None = None
+    ) -> DrawingOutcome:
         reader = DrawingReader(DrawingReplayClient(self._recording()))
-        return self._grade(reader, image, execution, error=error)
+        return self._grade(reader, image, execution, error=error, started=started)
 
     def _grade(
-        self, reader: DrawingReader, image: bytes, execution: str, error: str | None = None
+        self,
+        reader: DrawingReader,
+        image: bytes,
+        execution: str,
+        error: str | None = None,
+        started: float | None = None,
     ) -> DrawingOutcome:
         read = reader.read(image)
         # The transcription is text produced by a third party and copied off a scan. Quarantine
@@ -164,4 +177,5 @@ class DrawingService:
                 for span in spans
             ],
             error=error,
+            elapsed_ms=(time.perf_counter() - started) * 1000 if started else 0.0,
         )

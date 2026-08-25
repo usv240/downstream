@@ -159,3 +159,33 @@ def test_the_public_view_does_not_leak_the_internal_tenant_field():
     workspace = create_workspace()
     workspace["_tenant_id"] = "t_secret"
     assert "_tenant_id" not in public_view(workspace)
+
+
+def test_the_pause_step_names_the_questions_it_actually_paused_on():
+    """It reported zero. The caller passed an empty list and overwrote it afterwards, so the
+    step -- the thing a judge reads to see where the agent stopped -- said it had stopped on
+    nothing while six questions were waiting."""
+    workspace = create_workspace()
+    step = next(e for e in workspace["timeline"] if e["step"] == "paused_for_reserved_authority")
+    assert step["evidence"]["outstanding"] == workspace["outstanding"]
+    assert len(workspace["outstanding"]) == 6
+    assert "paused on 6 owner questions" in step["detail"]
+
+
+def test_the_question_set_is_resolved_after_the_facts_are_grounded():
+    """A drawing that agrees with the registry raises one fewer question, so a list computed
+    before the run is always the wrong one."""
+    agreeing = create_workspace(
+        facts=[
+            {
+                "key": "dam_height_ft",
+                "value": 28,
+                "quoted_text": "MAX. EMBANKMENT HT. 28 FT",
+                "confidence": 0.9,
+                "provenance": "recorded_gemini_drawing_extraction",
+            }
+        ]
+    )
+    step = next(e for e in agreeing["timeline"] if e["step"] == "paused_for_reserved_authority")
+    assert len(step["evidence"]["outstanding"]) == 5
+    assert "resolve_dam_height_conflict" not in step["evidence"]["outstanding"]

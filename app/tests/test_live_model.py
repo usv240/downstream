@@ -165,3 +165,35 @@ def test_the_deploy_script_cannot_ship_the_mandated_model_switched_off():
 def test_live_inference_never_switches_on_for_the_local_placeholder_project(monkeypatch):
     monkeypatch.setenv("DOWNSTREAM_LIVE_MODEL", "true")
     assert DrawingService.from_environment("local").live_enabled is False
+
+
+def test_every_path_records_how_long_the_model_took(monkeypatch):
+    """The model call happens before the run's first timeline step, so the timeline's own offsets
+    cannot show it. Without this the steps read as 0.3s while the request took six seconds.
+
+    The live path was the one that silently reported zero: a replacement missed it and the other
+    three paths passed their start time, so nothing failed and the number was simply wrong.
+    """
+    import time as clock
+
+    class Slow(StubVertex):
+        def extract(self, image: bytes):
+            clock.sleep(0.3)
+            return super().extract(image)
+
+    live = service(monkeypatch, Slow(GOOD), live_enabled=True).read()
+    assert live.execution == LIVE
+    assert live.elapsed_ms >= 250, "the live path must time itself"
+    assert live.receipt()["elapsed_ms"] == round(live.elapsed_ms, 1)
+
+    class Boom(StubVertex):
+        def extract(self, image: bytes):
+            clock.sleep(0.2)
+            raise RuntimeError("NOT_FOUND")
+
+    fell_back = service(monkeypatch, Boom(), live_enabled=True).read()
+    assert fell_back.execution == REPLAY_AFTER_ERROR
+    assert fell_back.elapsed_ms >= 150, "a fallback still spent the time it spent"
+
+    replayed = service(monkeypatch, None, live_enabled=False).read()
+    assert replayed.elapsed_ms > 0

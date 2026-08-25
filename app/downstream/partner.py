@@ -177,13 +177,11 @@ def create_workspace(
     autonomy.open_run(
         workspace,
         trigger=trigger,
-        outstanding=[],
+        outstanding=outstanding_ids,
         drawing=drawing,
         registry_source=registry_source,
         scheduler=scheduler,
     )
-    # The question set depends on the facts the run just grounded, so it is computed after.
-    workspace["outstanding"] = outstanding_ids(workspace)
     return workspace
 
 
