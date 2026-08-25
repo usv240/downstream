@@ -120,10 +120,10 @@ function renderProgress(workspace) {
     meter.bound + '" aria-valuenow="' + meter.structured_context_tokens + '"><div class="meter-fill" style="width:' +
     pct + '%"></div></div>' +
     (times
-      ? '<span class="context-compare"><b>' + times + '&times; smaller</b> than replaying the transcript, which would send ' +
-        saved + " tokens</span>"
+      ? '<span class="context-compare" title="' + text(meter.method) + '"><b>' + times +
+        "&times; smaller</b> than replaying the transcript</span>"
       : "") +
-    "<span>" + text(meter.method) + "</span></div>";
+    "</div>";
 }
 
 function conflictEvidence(question) {
@@ -156,7 +156,7 @@ function renderQuestion(workspace) {
     ? '<span class="basis-badge conflict">Retrieved sources disagree</span>'
     : '<span class="basis-badge">Missing owner fact</span>';
   const guided = state.guided
-    ? '<div class="guided-callout"><b>Guided judge step</b><span>Use the synthetic example, save it, and watch the draft and evidence class update.</span></div>'
+    ? '<div class="guided-callout"><b>Guided step</b><span>Use the example, save, watch the draft update.</span></div>'
     : "";
   $("#question-card").innerHTML =
     '<div class="question-meta"><span>Question ' + question.position + " of " + question.total + '</span>' +
@@ -191,7 +191,7 @@ function renderPlan(workspace) {
     const evidenceLabel = evidenceKinds.length ? evidenceKinds.join(" + ") : "unresolved gap";
     return '<article class="plan-section"><h4>' + text(section.title) + '</h4><p>' + text(section.text) + '</p>' +
       '<div class="section-meta"><span class="section-status ' + section.status + '">' +
-      text(section.status.replaceAll("_", " ")) + '</span><span class="evidence-chip">Evidence: ' +
+      text(section.status.replaceAll("_", " ")) + '</span><span class="evidence-chip">' +
       text(evidenceLabel) + '</span></div>' +
       (section.source ? '<p><a href="' + section.source.url + '">' + text(section.source.source) + '</a></p>' : "") +
       '</article>';

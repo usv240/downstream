@@ -458,3 +458,45 @@
    transcript replay is the claim worth reading. */
 .context-compare { display: block; margin-top: 6px; font-size: .78rem; }
 .context-compare b { font-size: .82rem; }
+
+/* ---------------------------------------------------------------- console height discipline
+   The three columns grew past a laptop screen, so the whole console had to be scrolled and the
+   side-by-side effect it exists for was lost: you could never see a question, the draft it
+   feeds, and the progress against it at the same time.
+
+   Both sibling submissions solve this the same way and it is the right answer here too: cap the
+   panel to the viewport and let it scroll inside itself, rather than letting it push the page.
+   `min-height: 0` is the part that is easy to miss -- a grid child will not shrink below its
+   content without it, so the max-height is ignored and nothing scrolls. */
+.partner-shell { align-items: start; }
+.partner-shell > .pane,
+.partner-shell > section {
+  min-height: 0;
+  max-height: min(720px, calc(100vh - 210px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.plan-stack { max-height: none; overflow: visible; }
+
+/* The middle column holds two cards. It scrolls as one region so the question stays put while
+   the correction loop below it comes into view, instead of each card scrolling separately. */
+.partner-shell > section { display: grid; gap: 14px; align-content: start; }
+
+/* Secondary actions on the question card. Four buttons stacked two-by-two cost about 90px of
+   height for three actions nobody uses more than once. */
+.question-card .btn-row { gap: 8px; }
+.question-card .btn-row button:not(.btn-primary) {
+  min-height: 38px; padding: 7px 12px; font-size: .84rem; font-weight: 560;
+}
+
+/* Evidence chips repeated the word "Evidence" on every row of the draft. The column heading
+   already says what these are. */
+.evidence-chip { font-size: .7rem; }
+
+@media (max-height: 820px) {
+  .partner-shell > .pane,
+  .partner-shell > section { max-height: calc(100vh - 170px); }
+  .question-card { padding: 20px; }
+  .question-card h3 { font-size: 1.18rem; }
+}

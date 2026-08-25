@@ -57,6 +57,26 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 app.mount("/static", StaticFiles(directory=WEB), name="static")
 
 
+@app.middleware("http")
+async def always_revalidate_the_interface(request, call_next):
+    """Serve the pages and their assets with `no-cache`.
+
+    Not `no-store`: the ETag still does its job and an unchanged file still comes back as a 304,
+    so this costs a conditional request rather than a download. What it removes is heuristic
+    freshness -- a browser deciding on its own that yesterday's markup is probably still fine.
+
+    That decision is wrong here in a specific way. The page and the script that drives it deploy
+    together, so a cached script against fresh markup addresses elements that have moved. And
+    judging runs for a month against a URL that will be redeployed during it, which is exactly
+    the window where someone reloads and sees a page that no longer exists.
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/static") or path in {"/", "/judges", "/developer", "/evidence"}:
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {

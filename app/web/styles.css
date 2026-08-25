@@ -106,7 +106,16 @@ header.site {
   border-bottom: 1px solid var(--border);
 }
 .bar { display: flex; align-items: center; gap: 20px; min-height: 70px; }
-.brand { font-weight: 760; letter-spacing: -.025em; margin-right: auto; font-size: 1.02rem; }
+/* The brand is an anchor, so it needs the link colour and underline removed and a visible
+   focus ring putting back. `display: inline-flex` keeps the two-line wrap tidy on the landing
+   page, where the tagline is long enough to break. */
+.brand {
+  display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 .38em;
+  font-weight: 760; letter-spacing: -.025em; margin-right: auto; font-size: 1.02rem;
+  color: inherit; text-decoration: none; border-radius: 8px;
+}
+.brand:hover span, .brand:focus-visible span { color: var(--text); }
+.brand:focus-visible { outline: 2px solid var(--focus, currentColor); outline-offset: 4px; }
 .brand span { color: var(--text-muted); font-weight: 450; }
 header.site nav { display: flex; gap: 4px; flex-wrap: wrap; }
 header.site nav a {

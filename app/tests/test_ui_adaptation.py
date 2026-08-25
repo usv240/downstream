@@ -120,3 +120,48 @@ def test_the_correction_example_picks_the_same_answer_every_time():
     assert order_block.index('"emergency_manager"') < order_block.index('"downstream_people"'), (
         "emergency_manager must be tried first so the Notification section is the one that changes"
     )
+
+
+def test_the_brand_is_a_link_home_on_every_page():
+    """It is the first thing anyone clicks to get back, and it was a div on all four pages."""
+    for name in ("downstream.html", "developer.html",
+                 "downstream-judges-v2.html", "downstream-evidence.html"):
+        html = (WEB / name).read_text(encoding="utf-8")
+        assert '<a class="brand" href="/"' in html, name
+        assert 'aria-label="Downstream home"' in html, name
+
+
+def test_the_interface_is_served_with_revalidation():
+    """A cached script against fresh markup addresses elements that have moved.
+
+    The pages and the script that drives them deploy together, and judging runs for a month
+    against a URL that gets redeployed during it.
+    """
+    from fastapi.testclient import TestClient
+
+    from service.main import app
+
+    client = TestClient(app)
+    for path in ("/", "/judges", "/developer", "/evidence", "/static/downstream-v2.js"):
+        assert client.get(path).headers.get("cache-control") == "no-cache", path
+
+
+def test_the_console_columns_are_capped_to_the_viewport():
+    """The three columns exist to be read side by side. Past a screen height that stops working.
+
+    Both sibling submissions cap the panel and scroll inside it rather than letting it push the
+    page, and `min-height: 0` is the load-bearing half: without it a grid child will not shrink
+    below its content and the max-height is ignored.
+    """
+    css = (WEB / "downstream-v2.css").read_text(encoding="utf-8")
+    block = css[css.index("console height discipline"):]
+    for token in ("min-height: 0", "overflow-y: auto", "calc(100vh", "overscroll-behavior: contain"):
+        assert token in block, token
+
+
+def test_the_context_meter_does_not_spend_three_lines_on_its_method():
+    """It is a footnote. It sits in a 270px column where it cost more height than the number."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    meter = js[js.index("const meter = workspace.context_meter"): js.index("function conflictEvidence")]
+    assert 'title="' in meter, "the method should be a tooltip, not body copy"
+    assert "<span>\" + text(meter.method)" not in meter
