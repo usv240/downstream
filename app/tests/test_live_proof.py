@@ -179,3 +179,21 @@ def test_the_page_offers_the_proof_and_never_claims_to_run_it():
     assert "/live-proof" in js
     assert "This page did not run it." in js
 
+
+
+def test_firing_updates_the_receipt_without_re_rendering_the_console():
+    """It fires while the user is mid-task, which is the point of it.
+
+    A full re-render at an unpredictable moment would wipe a half-typed correction, live, in a
+    recording that has to be one take.
+    """
+    from pathlib import Path
+
+    js = (Path(__file__).resolve().parents[1] / "web" / "downstream-v2.js").read_text(
+        encoding="utf-8"
+    )
+    start = js.index("async function armLiveProof")
+    fired = js[start: js.index("armLiveProof);", start)]
+    assert "renderAutonomy(refreshed)" in fired
+    # `render(` on its own would redraw the question card and the correction card too.
+    assert "\n          render(" not in fired

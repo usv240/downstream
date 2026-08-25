@@ -576,8 +576,12 @@ async function armLiveProof() {
             (status.revision || "unknown") + " at " +
             new Date(status.fired_at).toLocaleTimeString() +
             ". This page did not run it.";
+          // Update the receipt in place, not the whole console. This fires while the user is
+          // doing something else -- that is the entire point of it -- so a full re-render would
+          // wipe a half-typed correction out from under them at an unpredictable moment.
           const refreshed = await api("/downstream/workspaces/" + armed.workspace_id);
-          render(refreshed);
+          state.workspace = refreshed;
+          renderAutonomy(refreshed);
           button.disabled = false;
           return;
         }
