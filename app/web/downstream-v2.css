@@ -500,3 +500,16 @@
   .question-card { padding: 20px; }
   .question-card h3 { font-size: 1.18rem; }
 }
+
+/* ---------------------------------------------------------------- wall-clock proof
+   The rest of the console runs on a clock the visitor advances. This card is the one place that
+   does not, so it is set apart rather than folded in with the buttons above it. */
+.live-proof {
+  margin-top: 14px; padding: 14px 16px;
+  border: 1px solid var(--border-strong); border-radius: 12px; background: var(--bg);
+}
+.live-proof-copy b { display: block; margin-bottom: 3px; }
+.live-proof .btn-row { margin: 12px 0 0; }
+#live-proof-status { margin: 10px 0 0; }
+#live-proof-status.armed { color: var(--warn); }
+#live-proof-status.fired { color: var(--ok); font-weight: 600; }

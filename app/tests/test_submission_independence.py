@@ -7,6 +7,7 @@ repository should not find any of that, and a test that claims the submission is
 should be the thing that catches it.
 """
 
+import ast
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -107,21 +108,29 @@ def test_no_module_is_reachable_only_from_its_own_tests() -> None:
         and path.name != "__init__.py"
         and not is_entry_point(path)
     ]
-    corpus = "\n".join(
-        path.read_text(encoding="utf-8", errors="ignore")
-        for path in repository_files()
-        if path.suffix == ".py" and "tests" not in path.parts
-    )
+    # Parse the imports rather than grepping for one spelling of them. The substring form missed
+    # `from downstream import autonomy, live_proof` and reported a module that three files import.
+    imported_names: set[str] = set()
+    for path in repository_files():
+        if path.suffix != ".py" or "tests" in path.parts:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module:
+                imported_names.add(node.module)
+                for alias in node.names:
+                    imported_names.add(f"{node.module}.{alias.name}")
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    imported_names.add(alias.name)
+
     orphans = []
     for path in sources:
         package, module = path.parts[-2], path.stem
-        imported = (
-            f"from {package}.{module} import" in corpus
-            or f"import {package}.{module}" in corpus
-            or f"from {package} import {module}" in corpus
-            or f"from .{module} import" in corpus
-        )
-        if not imported:
+        if f"{package}.{module}" not in imported_names:
             orphans.append(f"{package}/{module}.py")
     assert not orphans, (
         "these modules are reachable only from tests, so nothing they claim is in the "

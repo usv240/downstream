@@ -18,7 +18,9 @@ from typing import Any
 
 from downstream.live_model import DrawingService
 from downstream.store import (
+    FirestoreLiveProofStore,
     FirestoreWorkspaceStore,
+    MemoryLiveProofStore,
     MemoryWorkspaceStore,
     WorkspaceStore,
 )
@@ -42,6 +44,7 @@ class Runtime:
     project: str
     persistence: str
     workspaces: WorkspaceStore
+    live_proofs: Any
     api_keys: Any
     scheduler: WakeScheduler
     wake_store: WakeStore
@@ -135,6 +138,7 @@ def build_runtime() -> Runtime:
 
         client = firestore.Client(project=project)
         workspaces: WorkspaceStore = FirestoreWorkspaceStore(client)
+        live_proofs: Any = FirestoreLiveProofStore(client)
         api_keys: Any = FirestoreApiKeyStore(client, SERVICE_NAME)
         quota_store: Any = FirestoreQuotaStore(client)
         wake_store: Any = FirestoreWakeStore(client, "downstream_wakes")
@@ -142,6 +146,7 @@ def build_runtime() -> Runtime:
         wake_durability = "firestore_transactional"
     else:
         workspaces = MemoryWorkspaceStore()
+        live_proofs: Any = MemoryLiveProofStore()
         api_keys = MemoryApiKeyStore(SERVICE_NAME)
         quota_store = MemoryQuotaStore()
         wake_store = MemoryWakeStore()
@@ -157,6 +162,7 @@ def build_runtime() -> Runtime:
         project=project,
         persistence=persistence,
         workspaces=workspaces,
+        live_proofs=live_proofs,
         api_keys=api_keys,
         scheduler=WakeScheduler(wake_store, RealClock()),
         wake_store=wake_store,
@@ -201,6 +207,7 @@ def local_runtime(
         project="local",
         persistence="memory-local",
         workspaces=workspaces if workspaces is not None else MemoryWorkspaceStore(),
+        live_proofs=MemoryLiveProofStore(),
         api_keys=MemoryApiKeyStore(SERVICE_NAME),
         scheduler=WakeScheduler(wake_store, RealClock()),
         wake_store=wake_store,

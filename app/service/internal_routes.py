@@ -18,7 +18,7 @@ from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
 
-from downstream import autonomy
+from downstream import autonomy, live_proof
 from downstream.partner import outstanding_ids, public_view
 from spine.wake import Wake
 
@@ -49,7 +49,14 @@ def build_internal_router(runtime) -> APIRouter:
         if workspace is None:
             # The workspace is gone. Completing the wake is correct: retrying cannot succeed.
             return
+        # Carry the identity of the run that is doing the work, so the step it writes can be
+        # checked against the revision rather than taken on trust.
+        workspace["_live_proof_wake_id"] = wake.wake_id
+        workspace["_live_proof_revision"] = live_proof.revision()
+        workspace["_live_proof_armed_at"] = wake.payload.get("armed_at")
         autonomy.advance_on_wake(workspace, wake.kind, outstanding=outstanding_ids(workspace))
+        for key in ("_live_proof_wake_id", "_live_proof_revision", "_live_proof_armed_at"):
+            workspace.pop(key, None)
         runtime.workspaces.put(workspace)
 
     @router.post("/scan-due")

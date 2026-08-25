@@ -225,6 +225,9 @@ NUDGE_KIND = "unanswered_question_nudge"
 FOLLOW_UP_AFTER = timedelta(days=3)
 NUDGE_AFTER = timedelta(days=7)
 
+# Registered against the wall clock by the public live-proof route, not by the opening run.
+LIVE_PROOF_KIND = "unattended_draft_review"
+
 
 def register_wakes(workspace: dict[str, Any], scheduler: Any) -> list[str]:
     """Schedule the work that is real but not due yet.
@@ -296,6 +299,33 @@ def advance_on_wake(
             outstanding=outstanding,
         )
         workspace["follow_up_pending"] = True
+    elif kind == LIVE_PROOF_KIND:
+        # The whole point of this one is that a person did not do it. It records that the agent
+        # looked at the draft on schedule, and stamps the revision that did the looking so the
+        # claim is checkable rather than atmospheric.
+        armed_at = workspace.get("_live_proof_armed_at")
+        waited = None
+        if armed_at:
+            try:
+                waited = round(
+                    datetime.now(timezone.utc).timestamp()
+                    - datetime.fromisoformat(armed_at).timestamp()
+                )
+            except ValueError:
+                waited = None
+        record_step(
+            workspace,
+            AGENT,
+            "unattended_review_ran",
+            (
+                "Reviewed the draft on the wall clock, with nobody watching. Nothing was sent to "
+                "any person or agency."
+            ),
+            wake_id=workspace.get("_live_proof_wake_id"),
+            revision=workspace.get("_live_proof_revision"),
+            waited_seconds=waited,
+            outstanding=workspace.get("outstanding", []),
+        )
     else:
         raise ValueError(f"unknown wake kind {kind}")
     workspace["updated_at"] = utc_now()

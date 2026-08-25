@@ -540,6 +540,66 @@ async function runWholeThing() {
   }
 }
 
+let liveProofPoll = null;
+
+async function armLiveProof() {
+  if (!state.workspace) {
+    setStatus("Open a workspace first, then arm the real-clock reminder.", "error");
+    return;
+  }
+  const button = $("#arm-live-proof");
+  const line = $("#live-proof-status");
+  button.disabled = true;
+  window.clearInterval(liveProofPoll);
+  try {
+    const armed = await api(
+      "/downstream/workspaces/" + state.workspace.workspace_id + "/live-proof",
+      {method: "POST"},
+    );
+    line.className = "small muted armed";
+    line.textContent =
+      "Armed. Due in " + armed.seconds_until_due +
+      " seconds on the real clock. Nothing on this page will run it.";
+
+    // Polling only asks whether the scheduler has been yet. It never causes the work, which is
+    // the whole property this card exists to demonstrate.
+    const startedAt = Date.now();
+    liveProofPoll = window.setInterval(async () => {
+      const elapsed = Math.round((Date.now() - startedAt) / 1000);
+      try {
+        const status = await api("/downstream/live-proof/" + armed.wake_id);
+        if (status.fired) {
+          window.clearInterval(liveProofPoll);
+          line.className = "small fired";
+          line.textContent =
+            "Fired after " + elapsed + " seconds, executed by Cloud Run revision " +
+            (status.revision || "unknown") + " at " +
+            new Date(status.fired_at).toLocaleTimeString() +
+            ". This page did not run it.";
+          const refreshed = await api("/downstream/workspaces/" + armed.workspace_id);
+          render(refreshed);
+          button.disabled = false;
+          return;
+        }
+        line.textContent =
+          status.seconds_until_due
+            ? "Waiting. Due in " + status.seconds_until_due + " seconds. " + elapsed + "s elapsed."
+            : "Due now, waiting for the scheduler's next pass. " + elapsed + "s elapsed.";
+      } catch (error) {
+        window.clearInterval(liveProofPoll);
+        line.className = "small muted";
+        line.textContent = error.message;
+        button.disabled = false;
+      }
+    }, 3000);
+  } catch (error) {
+    line.className = "small muted";
+    line.textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+$("#arm-live-proof").addEventListener("click", armLiveProof);
 $("#start-demo").addEventListener("click", start);
 $("#run-whole-thing").addEventListener("click", runWholeThing);
 $("#load-nid").addEventListener("click", loadNid);

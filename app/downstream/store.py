@@ -59,3 +59,32 @@ class ScopedWorkspaceStore:
         if workspace is None or workspace.get("_tenant_id") != self._tenant_id:
             return None
         return workspace
+
+
+class MemoryLiveProofStore:
+    """What was armed, so a poll can tell "not fired yet" apart from "never existed"."""
+
+    def __init__(self) -> None:
+        self._items: dict[str, dict[str, Any]] = {}
+        self._lock = threading.Lock()
+
+    def record_armed(self, armed) -> None:
+        with self._lock:
+            self._items[armed.wake_id] = armed.as_dict()
+
+    def get(self, wake_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            item = self._items.get(wake_id)
+            return copy.deepcopy(item) if item is not None else None
+
+
+class FirestoreLiveProofStore:
+    def __init__(self, client, collection: str = "downstream_live_proof") -> None:
+        self._collection = client.collection(collection)
+
+    def record_armed(self, armed) -> None:
+        self._collection.document(armed.wake_id).set(armed.as_dict())
+
+    def get(self, wake_id: str) -> dict[str, Any] | None:
+        snapshot = self._collection.document(wake_id).get()
+        return snapshot.to_dict() if snapshot.exists else None

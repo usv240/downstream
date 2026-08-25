@@ -66,6 +66,17 @@
         </div>
         <div class="profile-grid" id="autonomy-grid"><div class="profile-item"><small>Automatic agent steps</small><b>0</b></div><div class="profile-item"><small>Owner authority steps</small><b>0</b></div><div class="profile-item"><small>Continue clicks required</small><b>0</b></div><div class="profile-item"><small>Durable wakes registered</small><b>0</b></div></div>
         <p class="small muted" id="autonomy-waiting">Start the preset to open a run.</p>
+
+        <div class="live-proof" id="live-proof">
+          <div class="live-proof-copy">
+            <b>Prove it runs without you</b>
+            <span class="small muted">Everything above uses a clock you control. This one does not: it registers a wake on the real calendar, and Cloud Scheduler executes it. Close the tab and it still fires.</span>
+          </div>
+          <div class="btn-row">
+            <button id="arm-live-proof" data-action type="button">Set a real-clock reminder</button>
+          </div>
+          <p class="small muted" id="live-proof-status" role="status" aria-live="polite">Not armed.</p>
+        </div>
         <details class="answer-history" id="autonomy-timeline-wrap"><summary>View the ordered run timeline</summary><ol id="autonomy-timeline"></ol></details>
       </article>
     </div></section>

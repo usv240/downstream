@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from downstream import autonomy
+from downstream import autonomy, live_proof
 from downstream.autonomy import NUDGE_AFTER
 from downstream.bonus import gemma_redaction_proof
 from downstream.partner import (
@@ -348,6 +348,32 @@ def build_router(runtime) -> APIRouter:
             "disclosure": [DRAFT_DISCLOSURE, SCREENING_DISCLOSURE],
             "synthetic_owner_answers": True,
         }
+
+    @router.post("/workspaces/{workspace_id}/live-proof")
+    def arm_live_proof(workspace_id: str, request: Request) -> dict[str, Any]:
+        """Register one wake on the real clock, then stop being involved.
+
+        Everything else here runs on a clock the visitor advances, which is honest and labelled
+        but leaves the fair objection that a button was pressed. This answers it: nothing on this
+        page executes the wake. Cloud Scheduler claims it and runs it, and the step it writes
+        carries the revision that did the work.
+        """
+        runtime.public_workspace_quota.enforce_network(
+            request,
+            "This network has used its daily allowance. It resets at UTC midnight.",
+        )
+        require(workspace_id)
+        armed = live_proof.arm(runtime.scheduler, workspace_id, runtime.live_proofs)
+        return armed.as_dict()
+
+    @router.get("/live-proof/{wake_id}")
+    def check_live_proof(wake_id: str) -> dict[str, Any]:
+        """Has the scheduler picked it up yet? Read-only; polling never causes the work."""
+        armed = runtime.live_proofs.get(wake_id)
+        if armed is None:
+            raise HTTPException(status_code=404, detail="no such live proof")
+        workspace = store.get(armed.get("workspace_id", ""))
+        return live_proof.status(armed, workspace)
 
     @router.get("/proof")
     def proof() -> dict[str, Any]:
