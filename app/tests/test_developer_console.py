@@ -34,9 +34,34 @@ def test_every_element_the_console_addresses_exists_in_the_markup():
     assert not referenced - present, f"script addresses missing elements: {sorted(referenced - present)}"
 
 
-def test_the_key_call_to_action_is_on_every_public_page():
+def test_the_key_is_reachable_from_every_public_page():
+    """Reachable, not necessarily in the navigation bar.
+
+    It lived in the bar until a sixth item wrapped the whole thing onto two rows at desktop
+    width. On the landing page it now sits beside the primary action in the hero, which is both
+    tidier and read sooner.
+    """
     for name in PAGES:
-        assert 'class="nav-cta"' in (WEB / name).read_text(encoding="utf-8"), name
+        html = (WEB / name).read_text(encoding="utf-8")
+        assert 'href="/developer"' in html or 'href="#create-key"' in html, name
+
+
+def test_no_public_page_wraps_its_navigation_bar():
+    """Five links fit on one row at desktop width. Six do not."""
+    for name in PAGES:
+        html = (WEB / name).read_text(encoding="utf-8")
+        nav = re.search(r"<header.*?<nav[^>]*>(.*?)</nav>", html, re.S)
+        assert nav, name
+        links = re.findall(r"<a\s+[^>]*href=", nav.group(1))
+        assert len(links) <= 5, f"{name} has {len(links)} nav links and will wrap"
+
+
+def test_the_landing_hero_offers_the_key_beside_the_primary_action():
+    landing = (WEB / "downstream.html").read_text(encoding="utf-8")
+    row = landing[landing.index('<div class="btn-row">'):]
+    row = row[: row.index("</div>")]
+    assert "Run the guided demo" in row
+    assert 'href="/developer"' in row, "the key should sit in the same button row"
 
 
 def test_the_landing_page_explains_the_key_and_links_to_it():

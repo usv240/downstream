@@ -117,32 +117,44 @@ def main() -> int:
     landing = landing_path.read_text(encoding="utf-8") if landing_path else ""
     header_nav = re.search(r"<header.*?<nav[^>]*>(.*?)</nav>", landing, re.S)
     nav_links = re.findall(r"<a\s+[^>]*href=", header_nav.group(1) if header_nav else "")
-    # Six links is the ceiling: the five paths plus one call to action for the API key, which
-    # has to be reachable from every page or nobody finds it.
+    # Five is the ceiling, and it is a layout constraint rather than taste: a sixth item wraps
+    # the bar onto two rows at desktop width, which is what happened when the API key call to
+    # action lived up here. It belongs beside the primary action in the hero, where it competes
+    # with nothing and is the first thing read.
     landing_ok = (
         header_nav is not None
-        and len(nav_links) <= 6
+        and len(nav_links) <= 5
         and 'href="/developer"' in header_nav.group(1)
         and 'href="/docs"' in header_nav.group(1)
         and 'href="/judges"' in header_nav.group(1)
-        and 'class="nav-cta"' in header_nav.group(1)
         and 'id="api"' in landing
     )
     if landing_ok:
-        print(f"    PASS  landing navigation has {len(nav_links)} focused links, an API key call to action, and an API section")
+        print(f"    PASS  landing navigation has {len(nav_links)} focused links and an API section")
     else:
         failures.append("landing navigation is overloaded or missing a core user path")
-        print("    FAIL  landing must expose demo, developer, docs, judge paths and a key CTA in six links")
+        print("    FAIL  landing needs demo, developer, docs and judge paths within five links")
 
-    every_page_ok = all(
-        'class="nav-cta"' in (WEB / name).read_text(encoding="utf-8")
-        for name in ("downstream.html", "developer.html", "downstream-judges-v2.html", "downstream-evidence.html")
-    )
-    if every_page_ok:
-        print("    PASS  the API key call to action is reachable from every public page")
+    hero = landing[: landing.find("</section>")]
+    if 'href="/developer"' in hero:
+        print("    PASS  the API key sits beside the primary action, not in the navigation bar")
     else:
-        failures.append("the API key call to action is missing from a public page")
-        print("    FAIL  a public page has no route to an API key")
+        failures.append("the hero does not offer an API key beside the primary action")
+        print("    FAIL  the hero has no route to an API key")
+
+    unwrapped = []
+    for name in ("downstream.html", "developer.html", "downstream-judges-v2.html", "downstream-evidence.html"):
+        html = (WEB / name).read_text(encoding="utf-8")
+        nav = re.search(r"<header.*?<nav[^>]*>(.*?)</nav>", html, re.S)
+        count = len(re.findall(r"<a\s+[^>]*href=", nav.group(1) if nav else ""))
+        reachable = 'href="/developer"' in html or 'href="#create-key"' in html
+        if count > 5 or not reachable:
+            unwrapped.append(f"{name} ({count} links, key reachable: {reachable})")
+    if not unwrapped:
+        print("    PASS  every public page keeps its bar to one row and still offers a key")
+    else:
+        failures.append("a public page wraps its navigation or hides the API key")
+        print("    FAIL  " + "; ".join(unwrapped))
 
     developer = (WEB / "developer.html").read_text(encoding="utf-8")
     developer_js = (WEB / "developer.js").read_text(encoding="utf-8")
