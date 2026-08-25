@@ -110,3 +110,13 @@ def test_every_question_has_a_worked_correction_to_offer():
     block = js[js.index("const REVISION_EXAMPLES"): js.index("function renderRevision")]
     for question in [*QUESTION_BANK, HEIGHT_CONFLICT_QUESTION]:
         assert question["id"] in block, f"no correction example for {question['id']}"
+
+
+def test_the_correction_example_picks_the_same_answer_every_time():
+    """A recording is one take, so the section that rewrites itself must be predictable."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert "REVISION_ORDER" in js
+    order_block = js[js.index("const REVISION_ORDER"): js.index("const REVISION_EXAMPLES")]
+    assert order_block.index('"emergency_manager"') < order_block.index('"downstream_people"'), (
+        "emergency_manager must be tried first so the Notification section is the one that changes"
+    )

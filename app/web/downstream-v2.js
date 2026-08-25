@@ -208,6 +208,17 @@ function historyMarkup(answer) {
 
 // Per-question corrections, so the example rewrites a section a viewer can watch change rather
 // than restating what is already there.
+// Tried in this order. emergency_manager leads because an after-hours contact is the most
+// legible thing to watch a draft section rewrite itself around.
+const REVISION_ORDER = [
+  "emergency_manager",
+  "access_heavy_rain",
+  "downstream_people",
+  "spillway_history",
+  "equipment",
+  "resolve_dam_height_conflict",
+];
+
 const REVISION_EXAMPLES = {
   access_heavy_rain: {
     answer: "The east lane washes out at the second bend.",
@@ -276,8 +287,15 @@ function renderRevision(workspace) {
       // access_heavy_rain, which the one-request run already corrects internally -- so using it
       // produced a third version with identical text and no visible change to the draft. A
       // correction that changes nothing on screen is worse than no example at all.
-      const untouched = answers.find(([, answer]) => (answer.version || 1) === 1);
-      const [targetId] = untouched || answers[0];
+      // Deterministic order, not "whichever came first". A recording is one take, so the
+      // section that visibly rewrites itself has to be the same one every rehearsal.
+      const unrevised = (id) => {
+        const answer = workspace.answers[id];
+        return answer && (answer.version || 1) === 1;
+      };
+      const preferred = REVISION_ORDER.find(unrevised);
+      const targetId =
+        preferred || (answers.find(([, a]) => (a.version || 1) === 1) || answers[0])[0];
       select.value = targetId;
       fillCurrent();
       const example = REVISION_EXAMPLES[targetId] || {
