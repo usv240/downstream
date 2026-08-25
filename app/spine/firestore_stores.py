@@ -12,7 +12,7 @@ step. Without that, two workers could execute the same due action.
 from __future__ import annotations
 
 from dataclasses import asdict, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from google.cloud import firestore
@@ -27,7 +27,7 @@ CLOCK_COLLECTION = "sim"
 def _as_utc(value: Any) -> Any:
     """Firestore returns timezone aware datetimes. Normalise defensively."""
     if isinstance(value, datetime) and value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
+        return value.replace(tzinfo=UTC)
     return value
 
 

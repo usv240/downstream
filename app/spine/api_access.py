@@ -12,12 +12,12 @@ import hmac
 import json
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
-
 
 API_KEY_HEADER = APIKeyHeader(
     name="X-API-Key",
@@ -58,7 +58,7 @@ class ApiKeyAuthenticator:
         cls,
         name: str = "BETA_API_KEY_HASHES",
         dynamic_lookup: Callable[[str], dict[str, Any] | None] | None = None,
-    ) -> "ApiKeyAuthenticator":
+    ) -> ApiKeyAuthenticator:
         raw = os.environ.get(name, "").strip()
         if not raw:
             return cls(dynamic_lookup=dynamic_lookup)
@@ -73,7 +73,7 @@ class ApiKeyAuthenticator:
     @classmethod
     def from_plaintext(
         cls, entries: dict[str, dict[str, Any]]
-    ) -> "ApiKeyAuthenticator":
+    ) -> ApiKeyAuthenticator:
         """Test and local-development helper. Production must use hashed configuration."""
         return cls({hash_api_key(key): value for key, value in entries.items()})
 

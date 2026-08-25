@@ -15,7 +15,6 @@ from service.main import app as public_app
 from service.routes import build_router
 from service.runtime import local_runtime
 
-
 WEB = Path(__file__).resolve().parents[1] / "web"
 
 

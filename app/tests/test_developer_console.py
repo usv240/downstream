@@ -68,7 +68,6 @@ def test_the_landing_page_explains_the_key_and_links_to_it():
     landing = (WEB / "downstream.html").read_text(encoding="utf-8")
     assert 'href="/developer"' in landing
     assert "API key" in landing
-    assert "developer.html" or True
 
 
 def test_the_console_offers_raw_and_formatted_views_and_a_reproducible_curl():

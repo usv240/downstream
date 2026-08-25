@@ -20,10 +20,11 @@ from __future__ import annotations
 import hashlib
 import threading
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from enum import StrEnum
-from typing import Any, Callable
+from typing import Any
 
 from spine.clock import Clock
 
@@ -232,7 +233,7 @@ class WakeScheduler:
         for wake in self.scan_due(limit, predicate=predicate):
             try:
                 handler(wake)
-            except Exception as exc:  # noqa: BLE001 - persist the typed failure and continue
+            except Exception as exc:
                 self.fail(wake.wake_id, f"{type(exc).__name__}: {exc}")
                 continue
             self.complete(wake.wake_id)
@@ -258,7 +259,7 @@ class WakeScheduler:
             return None
         try:
             handler(claimed)
-        except Exception as exc:  # noqa: BLE001 - persist the typed failure
+        except Exception as exc:
             self.fail(claimed.wake_id, f"{type(exc).__name__}: {exc}")
             return None
         self.complete(claimed.wake_id)

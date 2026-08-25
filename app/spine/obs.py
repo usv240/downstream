@@ -15,9 +15,10 @@ materially more context than a session in week one. That is checkable rather tha
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Iterator
+from typing import Any
 
 try:  # pragma: no cover - exercised in deployment, not in unit tests
     from opentelemetry import trace

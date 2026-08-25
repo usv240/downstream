@@ -8,7 +8,6 @@ from service.routes import build_router
 from service.runtime import local_runtime
 from spine.api_access import ApiKeyAuthenticator
 
-
 RECORD = {
     "NIDID": "IA00001",
     "NAME": "Example Dam",

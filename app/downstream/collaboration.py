@@ -7,8 +7,8 @@ asks and what it drafts, while preserving the original answer and every later re
 from __future__ import annotations
 
 import copy
-from typing import Any, Iterable
-
+from collections.abc import Iterable
+from typing import Any
 
 HEIGHT_CONFLICT_QUESTION = {
     "id": "resolve_dam_height_conflict",

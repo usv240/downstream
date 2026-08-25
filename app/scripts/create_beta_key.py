@@ -12,7 +12,13 @@ args = parser.parse_args()
 
 key = "ds_live_" + secrets.token_urlsafe(24)
 digest = hashlib.sha256(key.encode()).hexdigest()
-config = {digest: {"tenant_id": args.tenant, "label": args.label or args.tenant, "scopes": ["downstream:use"]}}
+config = {
+    digest: {
+        "tenant_id": args.tenant,
+        "label": args.label or args.tenant,
+        "scopes": ["downstream:use"],
+    }
+}
 print("API key, shown once:")
 print(key)
 print("\nHash-only BETA_API_KEY_HASHES value:")

@@ -3,7 +3,6 @@
 import hashlib
 import secrets
 
-
 code = "invite_" + secrets.token_urlsafe(24)
 digest = hashlib.sha256(code.encode("utf-8")).hexdigest()
 print("Invitation code, shown once:")

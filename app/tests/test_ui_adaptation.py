@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-
 WEB = Path(__file__).resolve().parents[1] / "web"
 
 
@@ -103,8 +102,8 @@ def test_the_correction_example_targets_an_answer_the_run_has_not_already_revise
 
 
 def test_every_question_has_a_worked_correction_to_offer():
-    from downstream.partner import QUESTION_BANK
     from downstream.collaboration import HEIGHT_CONFLICT_QUESTION
+    from downstream.partner import QUESTION_BANK
 
     js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
     block = js[js.index("const REVISION_EXAMPLES"): js.index("function renderRevision")]

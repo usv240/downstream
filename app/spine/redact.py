@@ -159,7 +159,7 @@ class GemmaReviewer(NameReviewer):
             raw = (response.text or "[]").strip()
             raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
             names = json.loads(raw)
-        except Exception as exc:  # noqa: BLE001 - converted to fail-closed
+        except Exception as exc:
             raise RedactionError(f"name review failed, refusing to proceed unredacted: {exc}") from exc
         if not isinstance(names, list):
             raise RedactionError("name reviewer returned a non-list, refusing to proceed")

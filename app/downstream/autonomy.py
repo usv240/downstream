@@ -18,7 +18,7 @@ and the run pauses only for owner knowledge or for evidence that must come from 
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from downstream.safety import mapping_gate
@@ -41,7 +41,7 @@ RESERVED_AUTHORITY = (
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def record_step(
@@ -308,7 +308,7 @@ def advance_on_wake(
         if armed_at:
             try:
                 waited = round(
-                    datetime.now(timezone.utc).timestamp()
+                    datetime.now(UTC).timestamp()
                     - datetime.fromisoformat(armed_at).timestamp()
                 )
             except ValueError:

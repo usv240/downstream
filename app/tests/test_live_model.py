@@ -8,8 +8,7 @@ a live call.
 """
 
 import pathlib
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 from downstream.live_model import (
     LIVE,
@@ -20,7 +19,7 @@ from downstream.live_model import (
 )
 from spine.quota import MemoryQuotaStore, NetworkFingerprint, QuotaGuard
 
-NOW = datetime(2026, 8, 23, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 23, tzinfo=UTC)
 
 
 class StubVertex:

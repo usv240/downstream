@@ -1,9 +1,9 @@
 import pytest
 
 from spine.verify import (
+    CircuitBroken,
     Claim,
     ClaimKind,
-    CircuitBroken,
     Record,
     RejectionCode,
     RenderGate,

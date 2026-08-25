@@ -21,14 +21,14 @@ import hmac
 import os
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from fastapi import HTTPException, Request
 
 
 def utc_day(now: datetime | None = None) -> str:
-    return (now or datetime.now(timezone.utc)).strftime("%Y-%m-%d")
+    return (now or datetime.now(UTC)).strftime("%Y-%m-%d")
 
 
 def _next_utc_midnight(now: datetime) -> datetime:
@@ -127,7 +127,7 @@ class NetworkFingerprint:
         self._hops = max(1, trusted_proxy_hops)
 
     @classmethod
-    def from_environment(cls) -> "NetworkFingerprint":
+    def from_environment(cls) -> NetworkFingerprint:
         pepper = os.environ.get("QUOTA_FINGERPRINT_PEPPER", "").strip()
         if not pepper:
             # Per-process pepper. Buckets stay consistent for the life of the instance and are
@@ -172,7 +172,7 @@ class QuotaGuard:
         self.limit = limit
 
     def check(self, bucket: str, now: datetime | None = None) -> QuotaVerdict:
-        at = now or datetime.now(timezone.utc)
+        at = now or datetime.now(UTC)
         try:
             return self._store.consume(f"{self.name}:{bucket}", utc_day(at), self.limit, at)
         except Exception:
@@ -206,7 +206,7 @@ class QuotaPolicy:
     live_model_calls_per_day: int = 25
 
     @classmethod
-    def from_environment(cls) -> "QuotaPolicy":
+    def from_environment(cls) -> QuotaPolicy:
         def read(name: str, default: int) -> int:
             try:
                 value = int(os.environ.get(name, default))

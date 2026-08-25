@@ -5,7 +5,7 @@ Downstream shipped with no rate limiting of any kind: unlimited invitation-code 
 These tests pin the behaviour that replaces it.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI, Request
@@ -19,7 +19,7 @@ from spine.quota import (
     utc_day,
 )
 
-NOW = datetime(2026, 8, 23, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 23, 12, 0, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -61,8 +61,8 @@ def test_a_refusal_is_a_429_carrying_the_reset_time(guard):
 
 
 def test_reset_day_is_utc_not_local():
-    assert utc_day(datetime(2026, 8, 23, 23, 59, tzinfo=timezone.utc)) == "2026-08-23"
-    assert utc_day(datetime(2026, 8, 24, 0, 1, tzinfo=timezone.utc)) == "2026-08-24"
+    assert utc_day(datetime(2026, 8, 23, 23, 59, tzinfo=UTC)) == "2026-08-23"
+    assert utc_day(datetime(2026, 8, 24, 0, 1, tzinfo=UTC)) == "2026-08-24"
 
 
 def fingerprint_app(fingerprint: NetworkFingerprint) -> TestClient:

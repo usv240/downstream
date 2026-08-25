@@ -15,8 +15,8 @@ from downstream import autonomy, live_proof
 from downstream.autonomy import NUDGE_AFTER
 from downstream.bonus import gemma_redaction_proof
 from downstream.partner import (
-    REQUIREMENTS,
     QUESTION_BANK,
+    REQUIREMENTS,
     assemble_context,
     context_meter,
     create_workspace,
@@ -556,12 +556,18 @@ def build_router(runtime) -> APIRouter:
                 {
                     "rule": "autonomous high-value action over simple chat",
                     "implementation": "downstream/autonomy.py: open_run and autonomy_proof",
-                    "test": "tests/test_autonomy.py::test_opening_a_workspace_runs_a_sequence_with_no_human_step",
+                    "test": (
+                        "tests/test_autonomy.py::"
+                        "test_opening_a_workspace_runs_a_sequence_with_no_human_step"
+                    ),
                 },
                 {
                     "rule": "asynchronous background execution over long timelines",
                     "implementation": "spine/wake.py plus service/internal_routes.py: /internal/scan-due",
-                    "test": "tests/test_internal_routes.py::test_a_due_wake_is_dispatched_and_changes_the_stored_workspace",
+                    "test": (
+                        "tests/test_internal_routes.py::"
+                        "test_a_due_wake_is_dispatched_and_changes_the_stored_workspace"
+                    ),
                 },
                 {
                     "rule": "the whole workflow is demonstrable in one request",

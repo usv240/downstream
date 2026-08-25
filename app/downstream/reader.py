@@ -73,7 +73,7 @@ class DrawingReplayClient:
         self.recording = recording
 
     @classmethod
-    def from_path(cls, path: Path) -> "DrawingReplayClient":
+    def from_path(cls, path: Path) -> DrawingReplayClient:
         return cls(json.loads(path.read_text(encoding="utf-8")))
 
     def extract(self, image: bytes) -> dict[str, Any]:

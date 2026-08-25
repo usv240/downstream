@@ -5,20 +5,20 @@ Only key digests enter this store. Plaintext keys exist only in the issuance res
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from google.cloud import firestore
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _active(data: dict[str, Any], product: str, now: datetime) -> bool:
     expires_at = data.get("expires_at")
     if isinstance(expires_at, datetime) and expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        expires_at = expires_at.replace(tzinfo=UTC)
     return (
         data.get("product") == product
         and data.get("revoked_at") is None

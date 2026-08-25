@@ -22,7 +22,7 @@ import hmac
 import os
 import re
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Protocol
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -111,7 +111,7 @@ class KeyIssuer:
     @classmethod
     def from_environment(
         cls, store: ApiKeyStore, *, product: str, scope: str, prefix: str
-    ) -> "KeyIssuer":
+    ) -> KeyIssuer:
         raw_ttl = os.environ.get("BETA_DEVELOPER_KEY_TTL_HOURS", "168")
         try:
             ttl = int(raw_ttl)
@@ -154,7 +154,7 @@ class KeyIssuer:
         return self.mint(request)
 
     def mint(self, request: KeyRequest) -> dict[str, Any]:
-        issued_at = datetime.now(timezone.utc)
+        issued_at = datetime.now(UTC)
         expires_at = issued_at + self.ttl
         api_key = f"{self.prefix}_{secrets.token_urlsafe(32)}"
         digest = hash_api_key(api_key)
@@ -249,7 +249,7 @@ def build_developer_router(
     @router.delete("/v1/key")
     def revoke_key(principal: ApiPrincipal = Depends(auth)) -> dict[str, Any]:
         require_scope(principal, scope)
-        revoked = issuer.store.revoke(principal.key_digest, datetime.now(timezone.utc))
+        revoked = issuer.store.revoke(principal.key_digest, datetime.now(UTC))
         if not revoked:
             raise HTTPException(
                 status_code=409,

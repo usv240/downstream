@@ -69,6 +69,17 @@ actually using.
   depth, velocity, arrival time, or evacuation zone.
 - Quote containment for regulatory claims. Empty or absent quotes cannot support a rendered claim.
 
+## What it looks like
+
+![The autonomy receipt after one request: fifteen automatic steps, zero continue clicks](docs/gallery/02-one-request-run.png)
+
+*One request. The agent resolved the record, read the drawing with Gemini, grounded every fact in a
+quote, derived the conflict between two sources, composed the draft, applied the mapping gate and
+scheduled its own follow-ups. The counts are read back out of the stored timeline, not asserted.*
+
+More in [`docs/gallery`](docs/gallery): the landing page, the ordered run timeline, the judge
+evidence page, and the developer console.
+
 ## Architecture
 
 See [`docs/architecture.mmd`](docs/architecture.mmd) for the source and
@@ -187,12 +198,20 @@ set `GOOGLE_CLOUD_PROJECT` and `USE_FIRESTORE=true`, then use Application Defaul
 
 ```bash
 cd app
+pip install -r requirements-dev.txt   # pytest, httpx and ruff; the service does not need them
 python -m pytest -q
+python -m ruff check .
 python scripts/check_a11y.py
 python scripts/downstream_demo_flow.py --url http://127.0.0.1:8080
 ```
 
-Current verified result: **313 tests**, accessibility green in both themes, and **63/63** demo
+The last one runs against a URL, so it works equally against the deployed service:
+
+```bash
+python scripts/downstream_demo_flow.py --url https://downstream-109051079423.us-central1.run.app
+```
+
+Current verified result: **344 tests**, accessibility green in both themes, and **63/63** demo
 checks. Full evidence, including what is deliberately switched off in the deployed configuration,
 is in [VALIDATION_EVIDENCE.md](VALIDATION_EVIDENCE.md).
 

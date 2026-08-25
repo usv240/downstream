@@ -86,7 +86,7 @@ class DrawingService:
         self._fixtures = fixtures
 
     @classmethod
-    def from_environment(cls, project: str, quota=None) -> "DrawingService":
+    def from_environment(cls, project: str, quota=None) -> DrawingService:
         """Live inference is ON unless someone explicitly turns it off.
 
         This defaulted to off once, as cost control, and the service shipped performing no
@@ -131,7 +131,7 @@ class DrawingService:
                 project=self.project, location=self.location, model=self.model
             )
             return self._grade(DrawingReader(client), image, LIVE)
-        except Exception as exc:  # noqa: BLE001 - a model outage falls back, it does not 500
+        except Exception as exc:
             return self._replay(image, REPLAY_AFTER_ERROR, error=f"{type(exc).__name__}: {exc}")
 
     def _replay(self, image: bytes, execution: str, error: str | None = None) -> DrawingOutcome:

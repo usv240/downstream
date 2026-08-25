@@ -6,7 +6,10 @@ import copy
 import json
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
+from downstream import autonomy
 from downstream.collaboration import (
     adaptation_snapshot,
     evidence_ledger,
@@ -14,9 +17,6 @@ from downstream.collaboration import (
     questions_for,
     revise_owner_answer,
 )
-from typing import Any
-
-from downstream import autonomy
 from downstream.safety import DRAFT_DISCLOSURE
 from spine.redact import Redactor
 
@@ -123,7 +123,7 @@ REQUIREMENTS = {
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def outstanding_ids(workspace: dict[str, Any]) -> list[str]:

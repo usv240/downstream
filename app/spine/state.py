@@ -19,10 +19,11 @@ from __future__ import annotations
 import threading
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from enum import StrEnum
-from typing import Any, Callable
+from typing import Any
 
 from spine.clock import Clock
 
@@ -232,7 +233,7 @@ class Runner:
 
             try:
                 output = definition.fn(started.idempotency_key, list(prior_outputs))
-            except Exception as exc:  # noqa: BLE001 - recorded, then surfaced
+            except Exception as exc:
                 self._store.put_step(
                     replace(
                         started,

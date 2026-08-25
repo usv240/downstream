@@ -4,4 +4,4 @@ Reviewed as a reusable durable runtime substrate. See spine/TECHNICAL_DESIGN.md 
 design and its resilience exit test.
 """
 
-__all__ = ["clock", "config", "state", "verify", "untrusted"]
+__all__ = ["clock", "config", "state", "untrusted", "verify"]
