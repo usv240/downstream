@@ -206,6 +206,35 @@ function historyMarkup(answer) {
     '</ol></details>';
 }
 
+// Per-question corrections, so the example rewrites a section a viewer can watch change rather
+// than restating what is already there.
+const REVISION_EXAMPLES = {
+  access_heavy_rain: {
+    answer: "The east lane washes out at the second bend.",
+    reason: "Owner corrected the access location.",
+  },
+  emergency_manager: {
+    answer: "Use the county duty desk after hours, not the daytime office line.",
+    reason: "Owner corrected the after-hours contact.",
+  },
+  downstream_people: {
+    answer: "The campground below the spillway is occupied from May to September.",
+    reason: "Owner narrowed the season.",
+  },
+  spillway_history: {
+    answer: "Water topped the channel in 1998 and cut a gully on the left abutment.",
+    reason: "Owner corrected the year.",
+  },
+  equipment: {
+    answer: "The neighbouring farm's excavator is about forty minutes away.",
+    reason: "Owner corrected the travel time.",
+  },
+  resolve_dam_height_conflict: {
+    answer: "Our insurance file uses 28 feet; the state engineer should confirm the drawing.",
+    reason: "Owner named who resolves it.",
+  },
+};
+
 function renderRevision(workspace) {
   const answers = Object.entries(workspace.answers);
   if (!answers.length) {
@@ -243,10 +272,20 @@ function renderRevision(workspace) {
   $("#save-revision").addEventListener("click", reviseSelectedAnswer);
   if ($("#example-revision")) {
     $("#example-revision").addEventListener("click", () => {
-      if (workspace.answers.access_heavy_rain) select.value = "access_heavy_rain";
+      // Pick an answer that has not been revised yet. The example used to be pinned to
+      // access_heavy_rain, which the one-request run already corrects internally -- so using it
+      // produced a third version with identical text and no visible change to the draft. A
+      // correction that changes nothing on screen is worse than no example at all.
+      const untouched = answers.find(([, answer]) => (answer.version || 1) === 1);
+      const [targetId] = untouched || answers[0];
+      select.value = targetId;
       fillCurrent();
-      $("#revision-answer").value = "The east lane washes out at the second bend.";
-      $("#revision-reason").value = "Owner corrected the access location.";
+      const example = REVISION_EXAMPLES[targetId] || {
+        answer: "A corrected version of this answer.",
+        reason: "Owner corrected this after review.",
+      };
+      $("#revision-answer").value = example.answer;
+      $("#revision-reason").value = example.reason;
       setStatus("Correction example inserted. Save it to prove versioned adaptation.", "neutral");
     });
   }

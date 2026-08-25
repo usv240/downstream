@@ -4,14 +4,16 @@ version = "0.1.0"
 description = "A stateful Emergency Action Plan drafting partner"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.32",
-    "pydantic>=2.9",
-    "google-cloud-firestore>=2.19",
-    "google-cloud-trace>=1.13",
-    "google-genai>=1.0",
-    "opentelemetry-sdk>=1.27",
-    "opentelemetry-exporter-gcp-trace>=1.7",
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.32,<1.0",
+    "pydantic>=2.9,<3.0",
+    # api-core 2.35.0 breaks every Firestore transaction here. Bisected; see requirements.txt.
+    "google-api-core>=2.29,<2.35",
+    "google-cloud-firestore>=2.19,<3.0",
+    "google-cloud-trace>=1.13,<2.0",
+    "google-genai>=1.0,<2.0",
+    "opentelemetry-sdk>=1.27,<2.0",
+    "opentelemetry-exporter-gcp-trace>=1.7,<2.0",
 ]
 
 [project.optional-dependencies]

@@ -113,3 +113,21 @@ def test_policy_ignores_a_nonsense_environment_value(monkeypatch):
     assert QuotaPolicy.from_environment().public_workspaces_per_day == 500
     monkeypatch.setenv("QUOTA_PUBLIC_WORKSPACES_PER_DAY", "0")
     assert QuotaPolicy.from_environment().public_workspaces_per_day == 500
+
+
+def test_the_quota_store_reports_when_it_fails_open():
+    """Failing open is the right call; failing open silently is not.
+
+    google-api-core 2.35.0 broke every Firestore transaction in this service. Workspace creation
+    returned 500 loudly, which is how it was found -- but the quota store swallowed the same
+    exception and kept admitting requests with no signal anywhere. A ceiling that has stopped
+    counting has to say so.
+    """
+    class BrokenStore:
+        def consume(self, bucket, day, limit, now):
+            raise RuntimeError("400 Invalid database id %28default%29")
+
+    guard = QuotaGuard(BrokenStore(), NetworkFingerprint("pepper"), name="test", limit=3)
+    verdict = guard.check("bucket", NOW)
+    assert verdict.allowed is True, "an outage must not take the product down"
+    assert verdict.degraded is True, "but it must be visible that the ceiling is not counting"

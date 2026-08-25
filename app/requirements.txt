@@ -1,8 +1,23 @@
-fastapi>=0.115
-uvicorn[standard]>=0.32
-pydantic>=2.9
-google-cloud-firestore>=2.19
-google-cloud-trace>=1.13
-google-genai>=1.0
-opentelemetry-sdk>=1.27
-opentelemetry-exporter-gcp-trace>=1.7
+# Pinned deliberately, not out of caution-by-default.
+#
+# google-api-core 2.35.0 breaks every Firestore transaction in this service with
+# "400 Invalid database id %28default%29" -- the default database name arriving percent-encoded
+# where it must not be. Workspace creation returned 500, and the quota store, which fails open by
+# design, began silently allowing everything. Nothing in this repository changed; a rebuild pulled
+# a new transitive release.
+#
+# Bisected against the live database on 2026-08-24: api-core 2.29.0 through 2.34.0 all pass,
+# 2.35.0 fails, and the firestore client version is irrelevant to it. The upper bound is on
+# api-core for that reason -- pinning firestore instead looked right and fixed nothing.
+#
+# Judging runs for a month. An unpinned transitive floor is a live outage waiting for a release
+# date nobody here controls, so the rest carry upper bounds on the same argument.
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.32,<1.0
+pydantic>=2.9,<3.0
+google-api-core>=2.29,<2.35
+google-cloud-firestore>=2.19,<3.0
+google-cloud-trace>=1.13,<2.0
+google-genai>=1.0,<2.0
+opentelemetry-sdk>=1.27,<2.0
+opentelemetry-exporter-gcp-trace>=1.7,<2.0

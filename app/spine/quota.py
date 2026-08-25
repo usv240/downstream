@@ -41,17 +41,25 @@ class QuotaVerdict:
     limit: int
     used: int
     resets_at: str
+    # True when the backend could not be reached and this verdict is a fail-open guess rather
+    # than a count. Failing open is the right call; failing open silently is not -- a transitive
+    # dependency once broke every Firestore transaction here and the ceiling stopped counting
+    # with no signal anywhere, because the exception was swallowed and never surfaced.
+    degraded: bool = False
 
     @property
     def remaining(self) -> int:
         return max(0, self.limit - self.used)
 
     def headers(self) -> dict[str, str]:
-        return {
+        headers = {
             "X-RateLimit-Limit": str(self.limit),
             "X-RateLimit-Remaining": str(self.remaining),
             "X-RateLimit-Reset": self.resets_at,
         }
+        if self.degraded:
+            headers["X-RateLimit-Degraded"] = "true"
+        return headers
 
 
 class QuotaStore(Protocol):
@@ -104,9 +112,10 @@ class FirestoreQuotaStore:
         try:
             allowed, used = bump(self._client.transaction())
         except Exception:
-            # A quota backend outage must not take the product down. Fail open, but still return
-            # a verdict carrying the limit so the caller sees a ceiling exists.
-            return QuotaVerdict(True, limit, 0, resets_at)
+            # A quota backend outage must not take the product down. Fail open, but say so: a
+            # silent fail-open is indistinguishable from a working ceiling right up until the
+            # bill arrives.
+            return QuotaVerdict(True, limit, 0, resets_at, degraded=True)
         return QuotaVerdict(allowed, limit, used, resets_at)
 
 
@@ -164,7 +173,14 @@ class QuotaGuard:
 
     def check(self, bucket: str, now: datetime | None = None) -> QuotaVerdict:
         at = now or datetime.now(timezone.utc)
-        return self._store.consume(f"{self.name}:{bucket}", utc_day(at), self.limit, at)
+        try:
+            return self._store.consume(f"{self.name}:{bucket}", utc_day(at), self.limit, at)
+        except Exception:
+            # The Firestore store already fails open internally; this catches a store that does
+            # not, so a counting outage can never become a 500 on the product path either.
+            return QuotaVerdict(
+                True, self.limit, 0, _next_utc_midnight(at).isoformat(), degraded=True
+            )
 
     def enforce(self, bucket: str, detail: str, now: datetime | None = None) -> QuotaVerdict:
         verdict = self.check(bucket, now)

@@ -87,3 +87,26 @@ def test_the_evidence_dashboard_executes_a_real_run():
     assert 'id="autonomy-tiles"' in html
     assert 'id="autonomy-timeline"' in html
     assert "/downstream/demo/run" in js, "the dashboard should run the agent, not read a fixture"
+
+
+def test_the_correction_example_targets_an_answer_the_run_has_not_already_revised():
+    """A worked example that changes nothing on screen is worse than no example.
+
+    It used to be pinned to access_heavy_rain, which the one-request demonstration corrects
+    internally, so clicking it produced a third version with identical text and a draft that
+    visibly did nothing.
+    """
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert "REVISION_EXAMPLES" in js
+    assert "(answer.version || 1) === 1" in js, "the example must prefer an unrevised answer"
+    assert 'select.value = targetId' in js
+
+
+def test_every_question_has_a_worked_correction_to_offer():
+    from downstream.partner import QUESTION_BANK
+    from downstream.collaboration import HEIGHT_CONFLICT_QUESTION
+
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    block = js[js.index("const REVISION_EXAMPLES"): js.index("function renderRevision")]
+    for question in [*QUESTION_BANK, HEIGHT_CONFLICT_QUESTION]:
+        assert question["id"] in block, f"no correction example for {question['id']}"
