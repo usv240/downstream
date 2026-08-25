@@ -225,7 +225,10 @@ const REVISION_EXAMPLES = {
     reason: "Owner corrected the access location.",
   },
   emergency_manager: {
-    answer: "Use the county duty desk after hours, not the daytime office line.",
+    // Carries a number on purpose. The 555-01xx range is reserved for fiction, so this is safe to
+    // put on screen, and it makes the redaction boundary visible rather than merely asserted: the
+    // owner keeps the digits, the model-safe form of the same answer carries PHONE_1.
+    answer: "After hours call the county duty desk on 406-555-0142, not the daytime office line.",
     reason: "Owner corrected the after-hours contact.",
   },
   downstream_people: {

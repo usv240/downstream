@@ -317,7 +317,15 @@ def revise_answer(
 ) -> dict[str, Any]:
     """Apply owner correction to the work product and retain the previous version."""
     at = utc_now()
-    revise_owner_answer(workspace, question_id, revised_answer, reason, at)
+    entry = revise_owner_answer(workspace, question_id, revised_answer, reason, at)
+    # Re-shield. The model-safe form is derived from the answer, so a correction that introduces
+    # an identifier -- an owner adding the after-hours number they had left out -- must produce a
+    # new one. Leaving the old form in place meant the boundary silently described the previous
+    # version of an answer, and an answer that gained its first identifier through a correction
+    # would have had none of it pseudonymised at all.
+    shielded = shield(entry["answer"])
+    entry["model_safe_answer"] = shielded["text"]
+    entry["identifier_shapes"] = shielded["shapes"]
     workspace["plan"] = compose_plan(workspace["answers"])
     autonomy.record_step(
         workspace,

@@ -164,3 +164,22 @@ def test_the_context_meter_does_not_spend_three_lines_on_its_method():
     meter = js[js.index("const meter = workspace.context_meter"): js.index("function conflictEvidence")]
     assert 'title="' in meter, "the method should be a tooltip, not body copy"
     assert "<span>\" + text(meter.method)" not in meter
+
+
+def test_the_correction_example_carries_an_identifier_so_the_boundary_is_visible():
+    """The video claims the owner keeps the number and only a pseudonym crosses to a model.
+
+    That has to be demonstrable on screen, not merely true of the system. The 555-01xx range is
+    reserved for fiction, so putting one in the worked example is safe.
+    """
+    from downstream.partner import shield
+
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    block = js[js.index("emergency_manager: {"):]
+    block = block[: block.index("},")]
+    assert "555-0142" in block, "the worked correction should contain a number"
+
+    shielded = shield("After hours call the county duty desk on 406-555-0142, not the daytime office line.")
+    assert "PHONE" in shielded["shapes"]
+    assert "406-555-0142" not in shielded["text"]
+    assert "PHONE_1" in shielded["text"]

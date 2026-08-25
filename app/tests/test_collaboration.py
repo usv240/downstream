@@ -111,3 +111,45 @@ def test_conflict_question_disappears_when_no_conflicting_source_exists():
         fact for fact in workspace["facts"] if fact["key"] != "dam_height_ft"
     ]
     assert len(questions_for(workspace, QUESTION_BANK)) == len(QUESTION_BANK)
+
+
+def test_a_correction_that_adds_an_identifier_is_shielded_too():
+    """The model-safe form is derived from the answer, so a revision has to regenerate it.
+
+    It did not. An owner who corrected an answer to add the after-hours number they had left out
+    would have had that number sitting in the form meant to protect it -- or, if the original
+    answer had carried no identifier at all, the correction's number would have crossed the model
+    boundary unprotected.
+    """
+    from downstream.partner import create_workspace, record_answer, revise_answer
+
+    workspace = create_workspace()
+    record_answer(workspace, "emergency_manager", "The county duty desk covers after hours.")
+    assert workspace["answers"]["emergency_manager"]["identifier_shapes"] == []
+
+    revise_answer(
+        workspace,
+        "emergency_manager",
+        "After hours call the county duty desk on 406-555-0142, not the daytime office line.",
+        reason="Owner added the number.",
+    )
+    entry = workspace["answers"]["emergency_manager"]
+    assert "PHONE" in entry["identifier_shapes"]
+    assert "406-555-0142" in entry["answer"], "the owner keeps their own words"
+    assert "406-555-0142" not in entry["model_safe_answer"]
+    assert "PHONE_1" in entry["model_safe_answer"]
+
+
+def test_the_model_boundary_reflects_the_current_version_not_the_first_one():
+    from downstream.partner import assemble_context, create_workspace, record_answer, revise_answer
+
+    workspace = create_workspace()
+    record_answer(workspace, "emergency_manager", "Ring the old number, 406-555-0100.")
+    revise_answer(
+        workspace, "emergency_manager", "Ring the new number, 406-555-0142.",
+        reason="Owner corrected it.",
+    )
+    boundary = assemble_context(workspace)
+    assert "406-555-0100" not in boundary
+    assert "406-555-0142" not in boundary
+    assert "old number" not in boundary, "the boundary should carry the current answer"
