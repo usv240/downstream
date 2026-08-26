@@ -60,7 +60,6 @@
       </div>
       <div class="revision-dock"><article class="revision-card" id="revision-card"><span class="eyebrow">Correction loop</span><h3>Your corrections stay attributable.</h3><p class="muted small">After the first answer, revise it here. Downstream keeps both versions and updates the draft.</p></article></div>
       </div>
-      <div class="profile-grid" id="profile-grid" hidden style="margin-top:14px"><div class="profile-item"><small>Reading level</small><b>Not learned yet</b></div><div class="profile-item"><small>Detail style</small><b>Not learned yet</b></div><div class="profile-item"><small>Vocabulary</small><b>No preferences yet</b></div><div class="profile-item"><small>Sessions remembered</small><b>0</b></div><div class="profile-item"><small>Feedback events</small><b>0</b></div><div class="profile-item"><small>Answer revisions</small><b>0</b></div><div class="profile-item"><small>Source conflicts surfaced</small><b>1</b></div></div>
 
       <article class="pane autonomy-pane" id="autonomy-pane" hidden style="margin-top:14px">
         <div class="autonomy-head">
@@ -71,6 +70,7 @@
           </div>
           <div class="btn-row">
             <button class="btn-primary" data-action id="run-whole-thing" type="button">Run the whole thing in one request</button>
+            <button data-action id="reset-demo" type="button">Start over</button>
           </div>
         </div>
         <div class="profile-grid" id="autonomy-grid"><div class="profile-item"><small>Automatic agent steps</small><b>0</b></div><div class="profile-item"><small>Owner authority steps</small><b>0</b></div><div class="profile-item"><small>Continue clicks required</small><b>0</b></div><div class="profile-item"><small>Durable wakes registered</small><b>0</b></div></div>
@@ -87,7 +87,17 @@
           </div>
           <p class="small muted" id="live-proof-status" role="status" aria-live="polite">Not armed.</p>
         </div>
-        <details class="answer-history" id="autonomy-timeline-wrap"><summary>View the ordered run timeline</summary><ol id="autonomy-timeline"></ol></details>
+        <div class="run-log" id="run-log">
+          <span class="run-log-eyebrow" id="run-log-eyebrow">Most recent step</span>
+          <ol class="timeline-list" id="autonomy-latest"></ol>
+          <details class="run-log-all" id="autonomy-timeline-wrap"><summary>View the ordered run timeline</summary><ol class="timeline-list" id="autonomy-timeline"></ol></details>
+        </div>
+
+        <section class="learned" id="learned">
+          <h4>What it learned about you</h4>
+          <p class="small muted" id="learned-note">No style preferences yet. Accept the style or ask for concise summaries and they appear here.</p>
+          <div class="profile-grid" id="profile-grid"></div>
+        </section>
       </article>
     </div></section>
 

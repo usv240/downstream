@@ -33,13 +33,16 @@ def result(api) -> dict:
 def test_one_request_reaches_a_reviewable_draft(result):
     assert result["workspace_id"].startswith("eap_")
     assert result["autonomy_proof"]["continue_clicks_required"] == 0
+    # The mapping gate leads. It is the one section that says what the agent declined to do, and
+    # last of six it sat below the fold of a column that scrolls inside itself -- invisible to
+    # anyone who did not scroll that pane.
     assert [section["key"] for section in result["plan"]] == [
+        "mapping",
         "purpose",
         "notification",
         "preparedness",
         "affected_areas",
         "site_facts",
-        "mapping",
     ]
 
 

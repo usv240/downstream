@@ -2,6 +2,9 @@ const state = {
   workspace: null,
   guided: new URLSearchParams(window.location.search).get("guided") === "1",
   busy: false,
+  // The answer most recently corrected, so the correction card stays on it across the re-render
+  // that saving triggers rather than snapping back to the first option.
+  lastRevised: null,
 };
 
 const DEMO_ANSWERS = {
@@ -137,6 +140,40 @@ function conflictEvidence(question) {
     '<span>' + text(question.evidence.drawing_quote) + '</span></div></div>';
 }
 
+const FACT_LABELS = {
+  crest_elevation: "Crest elevation",
+  spillway: "Spillway",
+  dam_height_ft: "Dam height",
+};
+
+// After the last question the middle column had nothing left to say, and left roughly 500px of
+// white in the visual centre of the page. These are the facts the run lifted off the drawing,
+// each with the quote it came from -- the most concrete evidence the console holds, and until
+// now it vanished the moment the workflow finished.
+function groundedFactsMarkup(workspace) {
+  // The disagreement leads. Filling this column pushed it to third of three, below the fold of a
+  // pane that scrolls inside itself -- the same way the mapping gate got buried, and the same fix.
+  // A value two sources argue about is worth more than two they agree on.
+  const facts = (workspace.facts || [])
+    .filter((fact) => fact.quoted_text)
+    .sort((a, b) => Number(Boolean(b.conflicts_with)) - Number(Boolean(a.conflicts_with)));
+  if (!facts.length) return "";
+  return '<section class="grounded"><h4>What it read, and what it can quote</h4>' +
+    facts.map((fact) => {
+      const label = FACT_LABELS[fact.key] || String(fact.key || "").replaceAll("_", " ");
+      const source = String(fact.provenance || "").startsWith("live_")
+        ? "Gemini 3.5 Flash, live"
+        : "graded recording";
+      const conflict = fact.conflicts_with
+        ? '<span class="grounded-conflict">Disagrees with the ' + text(fact.conflicts_with) + "</span>"
+        : "";
+      return '<article class="grounded-fact"><div class="grounded-head"><small>' + text(label) +
+        "</small><b>" + text(fact.value) + "</b></div>" +
+        "<q>" + text(fact.quoted_text) + "</q>" +
+        '<span class="grounded-src">' + text(source) + "</span>" + conflict + "</article>";
+    }).join("") + "</section>";
+}
+
 function renderQuestion(workspace) {
   const question = workspace.next_question;
   if (!question) {
@@ -150,7 +187,8 @@ function renderQuestion(workspace) {
       '<p>Five owner gaps and one retrieved-source conflict are structured with provenance. ' +
       'Mapping remains blocked until qualified evidence satisfies its gate.</p>' +
       '<div class="completion-checks"><span>Owner facts structured</span><span>Conflict retained</span><span>Unsafe map withheld</span></div>' +
-      '<div class="btn-row">' + action + '<a class="btn" href="/evidence">Open evidence dashboard</a></div>';
+      '<div class="btn-row">' + action + '<a class="btn" href="/evidence">Open evidence dashboard</a></div>' +
+      groundedFactsMarkup(workspace);
     $("#resume-session").addEventListener("click", resumeSession);
     return;
   }
@@ -202,11 +240,12 @@ function renderPlan(workspace) {
 }
 
 function historyMarkup(answer) {
-  return '<details class="answer-history"><summary>View ' + answer.history.length + ' saved version' +
-    (answer.history.length === 1 ? "" : "s") + '</summary><ol>' +
+  const count = answer.history.length;
+  return '<h4>' + count + " saved version" + (count === 1 ? "" : "s") + "</h4>" +
+    '<ol class="version-list">' +
     answer.history.map((entry) => '<li><b>Version ' + entry.version + '</b><span>' +
       text(entry.answer) + '</span><small>' + text(entry.reason) + '</small></li>').join("") +
-    '</ol></details>';
+    "</ol>";
 }
 
 // Per-question corrections, so the example rewrites a section a viewer can watch change rather
@@ -261,14 +300,21 @@ function renderRevision(workspace) {
     return;
   }
 
+  // Saving a correction re-renders this card from scratch, and a rebuilt <select> falls back to
+  // its first option. That walked the card away from the answer just corrected: the history
+  // control dropped back to "View 1 saved version" for an unrelated question, so the one control
+  // that proves both versions were kept was showing the wrong one at the moment it mattered.
+  const held = state.lastRevised && workspace.answers[state.lastRevised] ? state.lastRevised : null;
   const options = answers.map(([id, answer]) =>
-    '<option value="' + id + '">' + text(id.replaceAll("_", " ")) + ", version " + answer.version + '</option>'
+    '<option value="' + id + '"' + (id === held ? " selected" : "") + ">" +
+    text(id.replaceAll("_", " ")) + ", version " + answer.version + "</option>"
   ).join("");
   $("#revision-card").innerHTML =
     '<span class="eyebrow">Correction loop</span><h3>Change an owner fact without erasing history.</h3>' +
+    '<div class="revision-body">' +
+    '<div class="revision-form">' +
     '<label for="revision-question" class="control-kicker">Answer to revise</label>' +
     '<select class="control" id="revision-question">' + options + '</select>' +
-    '<div id="revision-history"></div>' +
     '<label for="revision-answer" class="control-kicker">Corrected answer</label>' +
     '<textarea class="control" id="revision-answer" rows="3"></textarea>' +
     '<label for="revision-reason" class="control-kicker">Why it changed</label>' +
@@ -276,7 +322,9 @@ function renderRevision(workspace) {
     '<p class="field-error" id="revision-error"></p>' +
     '<div class="btn-row"><button id="save-revision" data-action type="button">Revise and preserve history</button>' +
     (state.guided ? '<button id="example-revision" data-action type="button">Use correction example</button>' : "") +
-    '</div>';
+    "</div></div>" +
+    '<aside class="revision-side" id="revision-history"></aside>' +
+    "</div>";
 
   const select = $("#revision-question");
   const fillCurrent = () => {
@@ -317,18 +365,39 @@ function renderRevision(workspace) {
 
 function renderProfile(workspace) {
   const profile = workspace.profile;
-  const vocabulary = Object.keys(profile.vocabulary).length
-    ? Object.entries(profile.vocabulary).map(([formal, preferred]) => formal + ": " + preferred).join(", ")
-    : "No preferences yet";
   const adaptation = workspace.adaptation;
-  $("#profile-grid").innerHTML =
-    '<div class="profile-item"><small>Reading level</small><b>' + text(profile.reading_level) + '</b></div>' +
-    '<div class="profile-item"><small>Detail style</small><b>' + text(profile.detail_preference) + '</b></div>' +
-    '<div class="profile-item"><small>Vocabulary</small><b>' + text(vocabulary) + '</b></div>' +
-    '<div class="profile-item"><small>Sessions remembered</small><b>' + adaptation.sessions_remembered + '</b></div>' +
-    '<div class="profile-item"><small>Feedback events</small><b>' + adaptation.feedback_events + '</b></div>' +
-    '<div class="profile-item"><small>Answer revisions</small><b>' + adaptation.answer_revisions + '</b></div>' +
-    '<div class="profile-item"><small>Source conflicts surfaced</small><b>' + adaptation.source_conflicts_surfaced + '</b></div>';
+
+  // Only what has actually been learned. This used to render "standard", "standard" and "No
+  // preferences yet" as three tiles the same size and weight as "15 automatic steps", which told
+  // a reader the absence of a preference mattered as much as the evidence of a run -- seven
+  // tiles, three of them announcing that nothing had happened yet.
+  const learned = [];
+  if (profile.reading_level && profile.reading_level !== "standard") {
+    learned.push(["Reading level", profile.reading_level]);
+  }
+  if (profile.detail_preference && profile.detail_preference !== "standard") {
+    learned.push(["Detail style", profile.detail_preference]);
+  }
+  const vocabulary = Object.entries(profile.vocabulary || {});
+  if (vocabulary.length) {
+    learned.push(["Vocabulary", vocabulary.map(([formal, preferred]) => formal + " → " + preferred).join(", ")]);
+  }
+
+  const tiles = learned.concat([
+    ["Sessions remembered", adaptation.sessions_remembered],
+    ["Feedback events", adaptation.feedback_events],
+    ["Answer revisions", adaptation.answer_revisions],
+    ["Source conflicts surfaced", adaptation.source_conflicts_surfaced],
+  ]);
+  $("#profile-grid").innerHTML = tiles
+    .map(([label, value]) =>
+      '<div class="profile-item"><small>' + text(label) + "</small><b>" + text(value) + "</b></div>")
+    .join("");
+
+  // One honest line instead of three tiles saying nothing. It also tells the reader which two
+  // controls put something here, which the tiles never did.
+  const note = $("#learned-note");
+  if (note) note.hidden = learned.length > 0;
   updatePersistentControls();
 }
 
@@ -364,6 +433,79 @@ const STEP_LABELS = {
   external_evidence: "External event",
 };
 
+// The stored timeline says *what* happened and the server's own detail line says *how*. Neither
+// says why the step exists, which is the part a reader cannot infer from an identifier and the
+// part that separates a designed agent from a sequence of calls. This is design rationale, fixed
+// per step kind -- it never asserts anything about a particular run.
+const STEP_WHY = {
+  run_triggered:
+    "An external event opened this run, not an operator pressing start. That is the line between an agent and a tool you drive.",
+  registry_record_resolved:
+    "Anything already recorded somewhere is the agent's job to fetch. Asking the owner to retype it would be the failure.",
+  drawing_read:
+    "A dam's real dimensions live on a scanned sheet, not in a database. Reading it multimodally is the only way to get them without asking a person.",
+  untrusted_spans_quarantined:
+    "A scanned document is untrusted input. Anything shaped like an instruction is stripped before the text is allowed near a model.",
+  facts_grounded:
+    "Every fact kept carries the quote it came from, so a reviewer can check it rather than trust it.",
+  source_conflict_detected:
+    "Two sources disagreeing is exactly what a language model papers over. It raises a question instead of quietly choosing a number.",
+  mapping_gate_applied:
+    "Inundation extent needs a qualified engineer. The gate fails closed rather than produce a map that would look authoritative and not be.",
+  durable_wakes_registered:
+    "Follow-ups are written to the database, not held in memory, so they survive the process exiting and fire whether or not anyone is watching.",
+  paused_for_reserved_authority:
+    "Some knowledge exists only in the owner's head. Inventing it is the one failure this product refuses, so the run stops here instead.",
+  owner_answer_recorded:
+    "Recorded as owner authority, never as agent output. The receipt keeps the two apart so the counts above cannot be inflated.",
+  sections_recomposed:
+    "New evidence rewrites the affected sections immediately. Nobody has to ask for a rebuild or notice that one is needed.",
+  owner_correction_applied:
+    "The previous answer is kept as a version rather than overwritten, so a correction stays auditable a year later.",
+  held_questions_reopened:
+    "A question set aside comes back on schedule. Without this, holding a question would mean losing it.",
+  held_questions_reviewed:
+    "The scheduled check ran and found nothing outstanding. A no-op, still recorded, because an unlogged check proves nothing.",
+  follow_up_recorded:
+    "Written into the workspace for the owner's return. Nothing is sent to any person or agency on the agent's own authority.",
+  unattended_review_ran:
+    "This one fired on the wall clock with no browser open. It is the step that cannot be faked by a page you are looking at.",
+};
+
+function stepMarkup(entry, index, started) {
+  // Elapsed since the trigger. The run takes about six seconds and a reader deserves to see
+  // where each step fell inside it, rather than a flat list that could have been written by
+  // hand afterwards.
+  const at = Date.parse(entry.at);
+  const offset = started && !Number.isNaN(at) ? ((at - started) / 1000).toFixed(1) + "s" : "";
+  const why = STEP_WHY[entry.step];
+  return (
+    '<li class="timeline-step ' + entry.actor + '">' +
+    '<span class="step-n">' + (index + 1) + "</span>" +
+    "<b>" + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
+    '<span class="step-at">' + text(offset) + "</span>" +
+    '<span class="step-what">' + text(STEP_TITLES[entry.step] || entry.step.replaceAll("_", " ")) + "</span>" +
+    '<span class="step-detail">' + text(entry.detail) + "</span>" +
+    (why ? '<span class="step-why">' + text(why) + "</span>" : "") +
+    "</li>"
+  );
+}
+
+// Expanded, twenty-three steps ran to about two screens and pushed everything below the receipt
+// out of reach, so the page read as a wall rather than as evidence. Collapsed to the newest step,
+// the receipt stays one screen and the full log is one arrow away for anyone who wants to audit
+// it -- which is the reader this list was always for.
+function syncRunLog(wrap, count) {
+  const open = wrap.open;
+  wrap.querySelector("summary").textContent = open
+    ? "Hide the earlier steps"
+    : "View all " + count + " steps, in the order they happened";
+  const latest = $("#autonomy-latest");
+  if (latest) latest.hidden = open;
+  const eyebrow = $("#run-log-eyebrow");
+  if (eyebrow) eyebrow.hidden = open;
+}
+
 function renderAutonomy(workspace) {
   const proof = workspace.autonomy_proof;
   if (!proof) return;
@@ -382,29 +524,21 @@ function renderAutonomy(workspace) {
   const timeline = proof.timeline || [];
   const started = timeline.length ? Date.parse(timeline[0].at) : 0;
   $("#autonomy-timeline").innerHTML = timeline
-    .map((entry, index) => {
-      // Elapsed since the trigger. The run takes about six seconds and a reader deserves to see
-      // where each step fell inside it, rather than a flat list that could have been written by
-      // hand afterwards.
-      const at = Date.parse(entry.at);
-      const offset = started && !Number.isNaN(at) ? ((at - started) / 1000).toFixed(1) + "s" : "";
-      return (
-        '<li class="timeline-step ' + entry.actor + '">' +
-        '<span class="step-n">' + (index + 1) + "</span>" +
-        '<b>' + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
-        '<span class="step-at">' + text(offset) + "</span>" +
-        '<span class="step-what">' + text(STEP_TITLES[entry.step] || entry.step.replaceAll("_", " ")) + "</span>" +
-        '<span class="step-detail">' + text(entry.detail) + "</span></li>"
-      );
-    })
+    .map((entry, index) => stepMarkup(entry, index, started))
     .join("");
-  // Open by default once there is a run. Collapsed, the strongest evidence in the product was a
-  // number on a tile and a control most people never click.
+  const last = timeline.length - 1;
+  $("#autonomy-latest").innerHTML = last >= 0 ? stepMarkup(timeline[last], last, started) : "";
   const wrap = $("#autonomy-timeline-wrap");
   if (wrap && timeline.length) {
-    wrap.open = true;
-    wrap.querySelector("summary").textContent =
-      "The " + timeline.length + " steps, in the order they happened";
+    if (!wrap.dataset.wired) {
+      wrap.dataset.wired = "1";
+      wrap.addEventListener("toggle", () => syncRunLog(wrap, Number(wrap.dataset.count || 0)));
+    }
+    // Only the label and the newest step are refreshed here. Re-closing the log on every render
+    // would collapse it under a reader who had just opened it -- and the unattended wake lands
+    // mid-session by design, so that would happen at the least predictable moment.
+    wrap.dataset.count = String(timeline.length);
+    syncRunLog(wrap, timeline.length);
   }
 }
 
@@ -414,7 +548,7 @@ function revealConsole() {
   // worth taking.
   const empty = $("#console-empty");
   if (empty) empty.hidden = true;
-  ["#console-shell", "#profile-grid", "#autonomy-pane"].forEach((selector) => {
+  ["#console-shell", "#autonomy-pane"].forEach((selector) => {
     const node = $(selector);
     if (node) node.hidden = false;
   });
@@ -494,6 +628,7 @@ async function reviseSelectedAnswer() {
     return;
   }
   $("#revision-error").textContent = "";
+  state.lastRevised = questionId;
   await runAction(
     "Saving the correction and preserving the prior version.",
     () => api("/downstream/workspaces/" + state.workspace.workspace_id + "/answers/" + questionId + "/revise", {
@@ -684,7 +819,55 @@ async function armLiveProof() {
   }
 }
 
+// Rehearsing the demo meant reloading the page to get a clean console, which drops the warmed
+// service and costs a cold start on the next run -- the one thing the recording notes say to
+// avoid. This clears the workspace in place and leaves the tab warm.
+function resetDemo() {
+  window.clearInterval(liveProofPoll);
+  state.workspace = null;
+  state.lastRevised = null;
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("workspace");
+  url.hash = "workspace";
+  window.history.replaceState({}, "", url);
+
+  $("#console-empty").hidden = false;
+  ["#console-shell", "#autonomy-pane", "#workspace-identity"].forEach((selector) => {
+    const node = $(selector);
+    if (node) node.hidden = true;
+  });
+
+  const wrap = $("#autonomy-timeline-wrap");
+  if (wrap) {
+    wrap.open = false;
+    delete wrap.dataset.count;
+  }
+  $("#autonomy-timeline").innerHTML = "";
+  $("#autonomy-latest").innerHTML = "";
+  const plan = $("#run-plan");
+  if (plan) plan.hidden = true;
+
+  // The tiles have to go back to zero too. Leaving 15 automatic steps on screen after a clear
+  // would be a count that belongs to a run that no longer exists -- the one kind of error this
+  // panel exists to make impossible.
+  $("#autonomy-grid").innerHTML = [
+    "Automatic agent steps", "Owner authority steps", "Continue clicks required",
+    "Durable wakes registered",
+  ].map((label) => '<div class="profile-item"><small>' + label + "</small><b>0</b></div>").join("");
+  $("#autonomy-waiting").textContent = "Start the preset to open a run.";
+
+  const proofLine = $("#live-proof-status");
+  proofLine.className = "small muted";
+  proofLine.textContent = "Not armed.";
+  $("#arm-live-proof").disabled = false;
+
+  updatePersistentControls();
+  setStatus("Cleared. The service is still warm, so the next run will not pay a cold start.", "neutral");
+}
+
 $("#arm-live-proof").addEventListener("click", armLiveProof);
+$("#reset-demo").addEventListener("click", resetDemo);
 $("#start-demo").addEventListener("click", start);
 $("#run-whole-thing").addEventListener("click", runWholeThing);
 // The same two actions, offered where a cold visitor actually looks: the console header and the

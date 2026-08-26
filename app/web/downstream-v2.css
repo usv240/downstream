@@ -565,6 +565,50 @@
 .step-what { font-weight: 620; font-size: .88rem; }
 .step-detail { grid-column: 2 / -1; color: var(--text-muted); font-size: .8rem; }
 
+/* What happened is the detail line above; this is why the step exists. Set apart rather than
+   merged, because a reader scanning for the record should be able to skip the rationale. */
+.step-why {
+  grid-column: 2 / -1; margin-top: 6px; padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-muted); font-size: .78rem; line-height: 1.5;
+}
+.step-why::before {
+  content: "Why"; margin-right: 8px;
+  font-size: .62rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  opacity: .75;
+}
+
+/* The run log. Expanded by default, twenty-three steps ran to roughly two screens and pushed the
+   whole page below it out of reach -- the receipt read as a wall instead of as evidence. The
+   newest step is what the page needs to show at a glance; the audit trail is one arrow away. */
+.run-log {
+  margin: 4px 0 13px; padding: 12px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
+}
+.run-log-eyebrow {
+  display: block; margin-bottom: 9px;
+  color: var(--text-muted); font-size: .68rem; font-weight: 680;
+  letter-spacing: .07em; text-transform: uppercase;
+}
+.timeline-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.run-log-all { margin-top: 10px; }
+.run-log-all > summary {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 2px; cursor: pointer; list-style: none;
+  color: var(--text-muted); font-size: .82rem; font-weight: 620;
+}
+.run-log-all > summary::-webkit-details-marker { display: none; }
+.run-log-all > summary::before {
+  content: ""; flex: none;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+  transition: transform .15s ease;
+}
+.run-log-all[open] > summary::before { transform: rotate(90deg); }
+.run-log-all > summary:hover { color: var(--text); }
+.run-log-all > summary:focus-visible { outline: 2px solid var(--accent, var(--text)); outline-offset: 3px; border-radius: 6px; }
+.run-log-all > ol { margin-top: 10px; }
+
 /* The correction loop sat inside the middle column, which scrolls. That put the one control a
    judge is told to use below the fold of a pane, reachable only by scrolling a region they had
    no reason to think was scrollable. It is a full-width band under the three panes now: always
@@ -574,15 +618,91 @@
   margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
 }
 .revision-dock .revision-card { margin: 0; }
-.revision-dock .revision-card > .control,
-.revision-dock .revision-card > select,
-.revision-dock .revision-card > textarea,
-.revision-dock .revision-card > input,
-.revision-dock .revision-card > .answer-history,
-.revision-dock .revision-card > div:not(.btn-row) { max-width: 720px; }
-/* Single column on purpose. A two-column grid here auto-placed each child into the next cell,
-   which put every label in one column and its own field in the other -- "Answer to revise" on the
-   left with its dropdown on the right. Pairing them would need a wrapper per field; constraining
-   the width gets the same result and cannot come apart. */
-.revision-dock .revision-card > label { display: block; margin-top: 12px; }
-.revision-dock .revision-card > .btn-row { margin-top: 16px; }
+
+/* Form on the left, the versions it preserves on the right.
+   The fields used to be capped at 720px inside a full-width card, which left half the card empty,
+   and the saved history -- the entire point of "preserve history" -- was a collapsed control
+   tucked under the dropdown. Both halves now carry their own content.
+
+   The earlier attempt at two columns put every label in one column and its own field in the
+   other, because a bare grid auto-places each child into the next cell. The fix is the wrapper:
+   the form is a single grid child, so a label can never be separated from its own input. */
+.revision-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 30px; align-items: start; margin-top: 8px;
+}
+.revision-form { display: grid; min-width: 0; }
+.revision-form label { display: block; margin-top: 12px; }
+.revision-form .btn-row { margin-top: 16px; }
+
+.revision-side {
+  min-width: 0; padding: 16px 18px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
+}
+.revision-side:empty { display: none; }
+.revision-side h4 {
+  margin: 0 0 10px; font-size: .78rem; font-weight: 680;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted);
+}
+.version-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.version-list li {
+  padding: 11px 13px; border: 1px solid var(--border); border-left-width: 3px;
+  border-left-color: var(--border-strong); border-radius: 10px; background: var(--surface);
+}
+.version-list li:last-child { border-left-color: var(--accent, var(--border-strong)); }
+.version-list b {
+  display: block; margin-bottom: 3px;
+  font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted);
+}
+.version-list span { display: block; font-size: .86rem; }
+.version-list small { display: block; margin-top: 5px; color: var(--text-muted); font-size: .76rem; }
+
+@media (max-width: 900px) {
+  .revision-body { grid-template-columns: 1fr; gap: 18px; }
+}
+
+/* What the run lifted off the drawing, with the quote behind each value. This fills the middle
+   column once the questions are done -- it used to hold a short completion card and about 500px
+   of nothing, in the visual centre of the page. */
+.grounded { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.grounded h4 {
+  margin: 0 0 10px; font-size: .78rem; font-weight: 680;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted);
+}
+.grounded-fact {
+  display: grid; gap: 4px; margin-bottom: 9px; padding: 11px 13px;
+  border: 1px solid var(--border); border-radius: 11px; background: var(--surface);
+}
+.grounded-fact:last-child { margin-bottom: 0; }
+.grounded-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.grounded-head small {
+  color: var(--text-muted); font-size: .7rem; font-weight: 680;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.grounded-head b { font-size: .95rem; }
+.grounded-fact q {
+  color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .78rem; overflow-wrap: anywhere;
+}
+.grounded-src { color: var(--text-muted); font-size: .72rem; }
+.grounded-conflict {
+  justify-self: start; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--border));
+  background: var(--warn-soft); color: var(--warn);
+  font-size: .7rem; font-weight: 680;
+}
+
+/* ---------------------------------------------------------------- what it learned
+   This was a bare strip of seven tiles between two titled cards -- no heading, no card, nothing
+   telling a reader what they were looking at, and three of the seven announced that nothing had
+   been learned yet. It is a labelled section of the receipt now: same card, stated subject, and
+   the null state is one sentence rather than three tiles competing with the run's evidence. */
+.learned {
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.learned h4 {
+  margin: 0 0 4px; font-size: .82rem; font-weight: 680;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted);
+}
+.learned #learned-note { margin: 0 0 10px; }
+.learned .profile-grid { margin: 0; }

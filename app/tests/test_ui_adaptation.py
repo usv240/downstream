@@ -197,9 +197,29 @@ def test_a_cold_visitor_is_not_shown_six_empty_panels():
     """The scaffolding is evidence of a run. Before there is one it reported "nothing yet" in six
     places and pushed the one action worth taking below the fold."""
     html = (WEB / "downstream.html").read_text(encoding="utf-8")
-    for hidden in ('id="console-shell" hidden', 'id="profile-grid" hidden', 'id="autonomy-pane" hidden'):
+    for hidden in ('id="console-shell" hidden', 'id="autonomy-pane" hidden'):
         assert hidden in html, hidden
     assert 'id="console-empty"' in html
+
+
+def test_the_learned_profile_is_a_named_section_of_the_receipt():
+    """It was a bare strip of seven tiles floating between two titled cards.
+
+    Nothing said what they were, and three of the seven announced that nothing had been learned
+    yet -- rendered at the same size and weight as "15 automatic steps", which told a reader the
+    absence of a preference mattered as much as the evidence of a run.
+    """
+    html = (WEB / "downstream.html").read_text(encoding="utf-8")
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+
+    receipt = html[html.index('id="autonomy-pane"'):]
+    receipt = receipt[: receipt.index("</article>")]
+    assert 'id="profile-grid"' in receipt, "the learned profile belongs inside the receipt card"
+    assert "What it learned about you" in receipt, "the tiles need a stated subject"
+
+    profile = js[js.index("function renderProfile"):js.index("function updatePersistentControls")]
+    assert '!== "standard"' in profile, "defaults must not be rendered as learned preferences"
+    assert "learned-note" in profile, "the empty state needs one sentence, not three empty tiles"
 
 
 def test_the_strongest_action_is_the_first_one_offered():
@@ -234,17 +254,71 @@ def test_the_run_says_what_it_is_doing_without_faking_progress():
     assert "read the 1958 drawing with Gemini" in plan
 
 
-def test_the_timeline_opens_itself_and_names_each_step_in_plain_words():
-    """Collapsed, the strongest evidence in the product was a number on a tile."""
+def test_the_run_log_shows_the_newest_step_and_hides_the_rest_behind_one_control():
+    """Twenty-three steps expanded ran to two screens and buried everything under the receipt.
+
+    The newest step is what the page owes a reader at a glance. The full log stays one arrow away,
+    because the reader who wants to audit twenty-three steps is willing to click once for them.
+    """
     js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    html = (WEB / "downstream.html").read_text(encoding="utf-8")
     assert "STEP_TITLES" in js
-    assert "wrap.open = true" in js
+    assert 'id="autonomy-latest"' in html, "the newest step needs its own list"
+    assert "wrap.open = true" not in js, "the log must not expand itself again"
+    # The collapsed state is the default, and only the label and newest step are refreshed after
+    # that -- re-closing on every render would collapse the log under a reader who just opened it.
+    assert "syncRunLog" in js
     for step, title in [
         ("drawing_read", "Read the 1958 drawing with Gemini"),
         ("source_conflict_detected", "Noticed two sources disagree"),
         ("paused_for_reserved_authority", "Stopped at owner knowledge"),
     ]:
         assert f'{step}: "{title}"' in js, step
+
+
+def test_every_titled_step_also_says_why_it_exists():
+    """The stored detail says what happened; a reader still cannot tell why the step exists.
+
+    That rationale is what separates a designed agent from a sequence of calls, and it is the one
+    thing a judge cannot reconstruct from an identifier.
+    """
+    import re
+
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    titled = set(re.findall(r"^  (\w+):", js[js.index("const STEP_TITLES"):js.index("const STEP_LABELS")], re.M))
+    explained = set(re.findall(r"^  (\w+):", js[js.index("const STEP_WHY"):js.index("function stepMarkup")], re.M))
+    assert not titled - explained, f"steps with no rationale: {sorted(titled - explained)}"
+
+
+def test_the_correction_card_stays_on_the_answer_it_just_revised():
+    """Saving re-renders the card, and a rebuilt <select> defaults to its first option.
+
+    That walked the card off the answer just corrected: the history control dropped back to
+    "View 1 saved version" for an unrelated question, at the exact moment it is meant to prove
+    both versions were kept.
+    """
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert "lastRevised: null" in js, "the held selection needs a declared home on state"
+    revise = js[js.index("async function reviseSelectedAnswer"):]
+    assert "state.lastRevised = questionId" in revise[: revise.index("\n}")], (
+        "the revised question must be recorded before the re-render"
+    )
+    render = js[js.index("function renderRevision"):js.index("function renderProfile")]
+    assert "state.lastRevised" in render and "selected" in render, (
+        "renderRevision must re-select the held answer when it rebuilds the options"
+    )
+    reset = js[js.index("function resetDemo"):js.index('$("#arm-live-proof").addEventListener')]
+    assert "state.lastRevised = null" in reset, "a cleared console must not hold a dead selection"
+
+
+def test_start_over_clears_the_counts_it_is_clearing_the_run_for():
+    """Leaving 15 automatic steps on a cleared console would be a count for a run that is gone."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert 'id="reset-demo"' in (WEB / "downstream.html").read_text(encoding="utf-8")
+    reset = js[js.index("function resetDemo"):js.index('$("#arm-live-proof").addEventListener')]
+    for cleared in ["#autonomy-timeline", "#autonomy-latest", "#autonomy-grid", "#console-empty"]:
+        assert cleared in reset, cleared
+    assert 'searchParams.delete("workspace")' in reset, "a cleared console must drop the resume id"
 
 
 def test_every_recorded_step_kind_has_a_plain_language_title():
@@ -281,9 +355,33 @@ def test_the_correction_loop_is_not_buried_in_a_scrolling_column():
 
 
 def test_the_correction_dock_does_not_split_labels_from_their_fields():
-    """A two-column grid auto-placed each child into the next cell, so every label landed in one
-    column and its own field in the other. Constraining width does the same job and cannot come
-    apart; pairing them in a grid would need a wrapper per field."""
+    """A bare two-column grid auto-placed each child into the next cell, so every label landed in
+    one column and its own field in the other.
+
+    The card is two columns again -- form left, saved versions right -- but the form is a single
+    grid child now, so a label physically cannot be separated from the input it names.
+    """
     css = (WEB / "downstream-v2.css").read_text(encoding="utf-8")
-    dock = css[css.index(".revision-dock {"):]
-    assert "grid-template-columns" not in dock.split("@media (max-width")[0]
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+
+    body = css[css.index(".revision-body {"):]
+    assert "grid-template-columns" in body.split("}")[0], "the dock uses both halves of its width"
+    assert ".revision-form {" in css, "the form must be one grid child, not a pile of them"
+
+    markup = js[js.index('$("#revision-card").innerHTML'):js.index('const select = $("#revision-question")')]
+    form = markup[markup.index('class="revision-form"'):markup.index('class="revision-side"')]
+    for field in ("revision-question", "revision-answer", "revision-reason", "save-revision"):
+        assert field in form, f"{field} escaped the form wrapper and can be split from its label"
+
+
+def test_the_completed_column_shows_the_facts_instead_of_white_space():
+    """With no question left, the middle column held a short card and ~500px of nothing, dead
+    centre of the page. The quoted facts are the most concrete evidence the console has, and they
+    used to disappear the moment the workflow finished."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert "function groundedFactsMarkup" in js
+    facts = js[js.index("function groundedFactsMarkup"):js.index("function renderQuestion")]
+    assert "quoted_text" in facts, "a value without its quote is the thing this project refuses"
+    assert "conflicts_with" in facts, "the 28-vs-31 disagreement has to survive completion"
+    complete = js[js.index('<span class="eyebrow">Question set complete'):]
+    assert "groundedFactsMarkup(workspace)" in complete[:900]

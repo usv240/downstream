@@ -491,6 +491,18 @@ def compose_plan(answers: dict[str, Any]) -> list[dict[str, Any]]:
     affected = answers.get("downstream_people", {}).get("answer")
     conflict = answers.get("resolve_dam_height_conflict", {}).get("answer")
     sections = [
+        # The refusal comes first, deliberately. It was written last and rendered last, which put
+        # it sixth of six in a column that scrolls inside itself with roughly 465px hidden -- so a
+        # reader who never scrolled that pane never learned the product declines to draw an
+        # inundation boundary at all. That is the strongest thing this draft does, and burying the
+        # strongest thing under five sections that merely restate owner answers was backwards.
+        {
+            "key": "mapping",
+            "title": "Mapping safety gate",
+            "status": "blocked_for_qualified_review",
+            "text": "No inundation boundary generated. A documented flow path may be reviewed.",
+            "source": None,
+        },
         {
             "key": "purpose",
             "title": "Purpose and status",
@@ -528,13 +540,6 @@ def compose_plan(answers: dict[str, Any]) -> list[dict[str, Any]]:
             ),
             "text": conflict
             or "The 28-foot registry and 31-foot drawing values still conflict.",
-            "source": None,
-        },
-        {
-            "key": "mapping",
-            "title": "Mapping safety gate",
-            "status": "blocked_for_qualified_review",
-            "text": "No inundation boundary generated. A documented flow path may be reviewed.",
             "source": None,
         },
     ]
