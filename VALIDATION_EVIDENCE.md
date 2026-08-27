@@ -21,11 +21,11 @@ One request to `POST /downstream/demo/run`:
 
 | Measure | Value |
 |---|---|
-| Automatic agent steps | 15 |
-| Owner authority steps | 7 |
+| Steps it took on its own | 15 |
+| Facts only the owner could give | 7 |
 | External trigger events | 1 |
-| Continue clicks required | 0 |
-| Durable wakes registered | 2 |
+| Clicks needed to keep it going | 0 |
+| Follow-ups it scheduled for itself | 2 |
 | Scheduled actions actually fired | 2 (`reopen_held_questions`, `unanswered_question_nudge`) |
 | System decisions over reserved authority | 0 |
 

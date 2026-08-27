@@ -156,7 +156,10 @@ def test_plan_changes_from_owner_fact_not_chat_prose():
 def test_mapping_section_is_always_blocked_in_demo_plan():
     section = next(row for row in compose_plan({}) if row["key"] == "mapping")
     assert section["status"] == "blocked_for_qualified_review"
-    assert "No inundation boundary" in section["text"]
+    # The refusal has to be legible to someone who does not know the term "inundation boundary":
+    # it is the strongest thing the draft does, and it was described in words that hid it.
+    assert section["text"].startswith("No flood map")
+    assert "qualified engineer" in section["text"]
 
 
 def test_public_view_adds_question_meter_and_progress_without_mutating_store():

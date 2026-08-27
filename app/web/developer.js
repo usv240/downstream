@@ -275,8 +275,8 @@
     const proof = body.autonomy_proof || (body.automatic_agent_steps !== undefined ? body : null);
     if (proof && proof.automatic_agent_steps !== undefined) {
       blocks.push("<h4>Autonomy receipt</h4><div class=\"fmt-grid\">" +
-        tile("Automatic agent steps", proof.automatic_agent_steps) +
-        tile("Owner authority steps", proof.human_authority_steps) +
+        tile("Steps it took on its own", proof.automatic_agent_steps) +
+        tile("Facts only the owner could give", proof.human_authority_steps) +
         tile("Continue clicks", proof.continue_clicks_required) +
         tile("Durable wakes", proof.durable_wakes_registered) + "</div>" +
         '<p class="small muted">Waiting on ' + esc(proof.waiting_on) + ".</p>");

@@ -184,8 +184,8 @@ function renderQuestion(workspace) {
     $("#question-card").innerHTML =
       '<span class="eyebrow">Question set complete</span>' +
       '<h3 id="current-question-heading" tabindex="-1">The review draft is ready.</h3>' +
-      '<p>Five owner gaps and one retrieved-source conflict are structured with provenance. ' +
-      'Mapping remains blocked until qualified evidence satisfies its gate.</p>' +
+      '<p>Five facts came from the owner and one disagreement between two sources is on record, ' +
+      'each with where it came from. The flood map stays blocked until a qualified engineer signs off.</p>' +
       '<div class="completion-checks"><span>Owner facts structured</span><span>Conflict retained</span><span>Unsafe map withheld</span></div>' +
       '<div class="btn-row">' + action + '<a class="btn" href="/evidence">Open evidence dashboard</a></div>' +
       groundedFactsMarkup(workspace);
@@ -224,11 +224,16 @@ function renderQuestion(workspace) {
   $("#skip-question").addEventListener("click", skip);
 }
 
+// What an evidence kind means to a reader, where the identifier alone would not say.
+const EVIDENCE_KIND_LABELS = {
+  fail_closed_mapping_policy: "Stopped on purpose, not by error",
+};
+
 function renderPlan(workspace) {
   const ledger = new Map(workspace.evidence_ledger.map((row) => [row.section, row]));
   $("#plan-stack").innerHTML = workspace.plan.map((section) => {
     const evidence = ledger.get(section.key)?.evidence || [];
-    const evidenceKinds = [...new Set(evidence.map((item) => item.kind.replaceAll("_", " ")))];
+    const evidenceKinds = [...new Set(evidence.map((item) => EVIDENCE_KIND_LABELS[item.kind] || item.kind.replaceAll("_", " ")))];
     const evidenceLabel = evidenceKinds.length ? evidenceKinds.join(" + ") : "unresolved gap";
     return '<article class="plan-section"><h4>' + text(section.title) + '</h4><p>' + text(section.text) + '</p>' +
       '<div class="section-meta"><span class="section-status ' + section.status + '">' +
@@ -510,10 +515,10 @@ function renderAutonomy(workspace) {
   const proof = workspace.autonomy_proof;
   if (!proof) return;
   const tiles = [
-    ["Automatic agent steps", proof.automatic_agent_steps],
-    ["Owner authority steps", proof.human_authority_steps],
-    ["Continue clicks required", proof.continue_clicks_required],
-    ["Durable wakes registered", proof.durable_wakes_registered],
+    ["Steps it took on its own", proof.automatic_agent_steps],
+    ["Facts only the owner could give", proof.human_authority_steps],
+    ["Clicks needed to keep it going", proof.continue_clicks_required],
+    ["Follow-ups it scheduled for itself", proof.durable_wakes_registered],
   ];
   $("#autonomy-grid").innerHTML = tiles
     .map(([label, value]) =>
@@ -741,10 +746,11 @@ async function runWholeThing() {
     const workspace = await api("/downstream/workspaces/" + result.workspace_id);
     render(workspace);
     setStatus(
-      "Done in " + result.elapsed_ms + " ms. " +
-      result.autonomy_proof.automatic_agent_steps + " automatic steps, " +
-      result.scheduled_actions_fired.length + " scheduled actions fired, 0 clicks. " +
-      "Owner answers were synthetic; the rehearsal clock was simulated.",
+      "Done in " + Math.round(result.elapsed_ms) + " ms: " +
+      result.autonomy_proof.automatic_agent_steps + " steps on its own, " +
+      result.scheduled_actions_fired.length + " follow-ups fired, 0 clicks. " +
+      "Owner answers were synthetic and the follow-ups ran on a simulated clock. " +
+      "The real clock is proven further down.",
       "success",
     );
     if (panel) panel.hidden = true;
@@ -852,8 +858,8 @@ function resetDemo() {
   // would be a count that belongs to a run that no longer exists -- the one kind of error this
   // panel exists to make impossible.
   $("#autonomy-grid").innerHTML = [
-    "Automatic agent steps", "Owner authority steps", "Continue clicks required",
-    "Durable wakes registered",
+    "Steps it took on its own", "Facts only the owner could give", "Clicks needed to keep it going",
+    "Follow-ups it scheduled for itself",
   ].map((label) => '<div class="profile-item"><small>' + label + "</small><b>0</b></div>").join("");
   $("#autonomy-waiting").textContent = "Start the preset to open a run.";
 

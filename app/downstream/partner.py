@@ -500,7 +500,7 @@ def compose_plan(answers: dict[str, Any]) -> list[dict[str, Any]]:
             "key": "mapping",
             "title": "Mapping safety gate",
             "status": "blocked_for_qualified_review",
-            "text": "No inundation boundary generated. A documented flow path may be reviewed.",
+            "text": "No flood map drawn. Which areas go under is a qualified engineer's call, so it stopped here rather than guess. A documented flow path may still be reviewed.",
             "source": None,
         },
         {

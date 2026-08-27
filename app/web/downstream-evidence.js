@@ -55,9 +55,9 @@ const ACTOR_LABELS = {
 function renderAutonomy(run) {
   const proof = run.autonomy_proof;
   const tiles = [
-    ["Automatic agent steps", proof.automatic_agent_steps],
-    ["Owner authority steps", proof.human_authority_steps],
-    ["Continue clicks required", proof.continue_clicks_required],
+    ["Steps it took on its own", proof.automatic_agent_steps],
+    ["Facts only the owner could give", proof.human_authority_steps],
+    ["Clicks needed to keep it going", proof.continue_clicks_required],
     ["Durable wakes fired", run.scheduled_actions_fired.length],
     ["Questions the agent raised", run.questions_asked_by_the_agent.length],
     ["Run time", run.elapsed_ms + " ms"],
@@ -67,7 +67,7 @@ function renderAutonomy(run) {
     value + "</strong></div></article>").join("");
   $("#autonomy-waiting").textContent =
     "Trigger: " + proof.trigger.replaceAll("_", " ") + ". Now waiting on " + proof.waiting_on +
-    ". Owner answers in this run are synthetic, and the rehearsal clock was simulated so a wake " +
+    ". Owner answers in this run are synthetic, and the follow-ups ran on a simulated clock so a wake " +
     "due in three days could fire inside one request.";
   $("#autonomy-summary").textContent = "Run timeline, " + proof.timeline.length + " steps";
   $("#autonomy-timeline").innerHTML = proof.timeline.map((step) =>
