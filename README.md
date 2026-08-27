@@ -32,17 +32,19 @@ it. Close the tab and it still happens.
 
 ```mermaid
 flowchart TD
-    T["An event starts the run, never a button<br>the public console, an API client, or Cloud Scheduler"]
-    T --> A["Resolve the dam record. Read the 1958 drawing with<br>Gemini 3.5 Flash on Vertex AI. Keep a quote for every fact."]
-    A --> B{"Two sources disagree?"}
-    B -->|"yes: 31 ft vs 28 ft"| C["Ask the owner one question,<br>with both values attached"]
-    B -->|no| D
-    C --> D["Compose every section it has evidence for"]
-    D --> E["No flood map drawn<br>a qualified engineer decides"]
-    D --> F["Stop at owner knowledge<br>the one input it may not invent"]
-    E --> G[("Firestore<br>the draft, its versions, its follow-ups")]
-    F --> G
-    G <--> H["Cloud Scheduler wakes it later<br>and re-checks: still complete? still true?"]
+    T["An event starts the run,<br>never a button"]
+    T --> A["Resolve the dam record"]
+    A --> B["Read the 1958 drawing<br>Gemini 3.5 Flash, Vertex AI"]
+    B --> C["Keep a quote for<br>every fact it keeps"]
+    C --> D{"Two sources<br>disagree?"}
+    D -->|"31 ft vs 28 ft"| E["Ask the owner,<br>both values attached"]
+    D -->|no| F
+    E --> F["Compose the sections<br>it has evidence for"]
+    F --> G["No flood map drawn.<br>An engineer decides."]
+    F --> H["Stop at owner knowledge.<br>It may not invent this."]
+    G --> I[("Firestore holds<br>the draft, its versions<br>and its follow-ups")]
+    H --> I
+    I <--> J["Cloud Scheduler wakes it<br>and re-checks the draft"]
 ```
 
 Four things follow from that shape.
