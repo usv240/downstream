@@ -124,6 +124,9 @@ def status(armed: dict[str, Any] | None, workspace: dict[str, Any] | None) -> di
     return {
         "found": True,
         "fired": True,
+        "wake_id": armed.get("wake_id"),
+        "armed_at": armed.get("armed_at"),
+        "due_at": armed.get("due_at"),
         "fired_at": step.get("at"),
         "revision": evidence.get("revision"),
         "waited_seconds": evidence.get("waited_seconds"),

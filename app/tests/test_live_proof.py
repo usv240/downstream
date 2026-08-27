@@ -197,3 +197,18 @@ def test_firing_updates_the_receipt_without_re_rendering_the_console():
     assert "renderAutonomy(refreshed)" in fired
     # `render(` on its own would redraw the question card and the correction card too.
     assert "\n          render(" not in fired
+
+
+def test_the_fired_status_carries_the_job_record() -> None:
+    """A page can show the wake itself -- id, armed, due, fired, revision -- not a paraphrase."""
+    from downstream.live_proof import status
+
+    armed = {"wake_id": "wk_1", "armed_at": "2026-08-27T00:00:00+00:00", "due_at": "2026-08-27T00:00:05+00:00"}
+    workspace = {"timeline": [{
+        "step": "unattended_review_ran", "at": "2026-08-27T00:00:50+00:00", "detail": "reviewed",
+        "evidence": {"wake_id": "wk_1", "revision": "downstream-00056-d5b", "waited_seconds": 50},
+    }]}
+    body = status(armed, workspace)
+    assert body["fired"] is True
+    assert (body["wake_id"], body["armed_at"], body["due_at"]) == ("wk_1", armed["armed_at"], armed["due_at"])
+    assert body["revision"] == "downstream-00056-d5b"

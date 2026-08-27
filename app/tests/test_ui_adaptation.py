@@ -264,7 +264,10 @@ def test_the_run_log_shows_the_newest_step_and_hides_the_rest_behind_one_control
     html = (WEB / "downstream.html").read_text(encoding="utf-8")
     assert "STEP_TITLES" in js
     assert 'id="autonomy-latest"' in html, "the newest step needs its own list"
-    assert "wrap.open = true" not in js, "the log must not expand itself again"
+    # The render path must never open it. A click handler may: "See the step it wrote" opens the
+    # log because the reader asked, which is the opposite of the failure this guards against.
+    render_path = js[js.index("function syncRunLog"):js.index("function revealConsole")]
+    assert "wrap.open = true" not in render_path, "the log must not expand itself on render"
     # The collapsed state is the default, and only the label and newest step are refreshed after
     # that -- re-closing on every render would collapse the log under a reader who just opened it.
     assert "syncRunLog" in js
@@ -340,6 +343,18 @@ def test_the_collapsed_receipt_says_what_ran_not_just_what_ran_last():
     assert "#autonomy-highlights" in sync, "highlights must hide when the full log opens"
     reset = js[js.index("function resetDemo"):js.index('$("#arm-live-proof").addEventListener')]
     assert "#autonomy-highlights" in reset
+
+
+def test_the_fired_line_links_to_the_step_the_scheduler_wrote():
+    """The wake reveal was a sentence with nothing to click. It links to its own evidence now."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    assert 'data-step="' in js[js.index("function stepMarkup"):js.index("function syncRunLog")]
+    assert "See the step it wrote" in js
+    assert 'data-step="unattended_review_ran"' in js
+    fire = js[js.index("if (status.fired)"):js.index("status.seconds_until_due")]
+    assert "showProofRecord(line, armed, status)" in fire
+    reset = js[js.index("function resetDemo"):js.index("function showProofRecord")]
+    assert "#proof-record" in reset, "a cleared console must drop the old job record"
 
 
 def test_start_over_clears_the_counts_it_is_clearing_the_run_for():

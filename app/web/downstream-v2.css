@@ -747,3 +747,23 @@
 .highlight.agent b { background: var(--accent-soft); color: var(--accent-strong, var(--accent)); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
 .highlight.human_authority b { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--border)); }
 .run-log-eyebrow-latest { margin-top: 2px; }
+
+/* The proof, clickable. A button on the fired line jumps to the step the scheduler wrote; the job
+   record under it is the wake itself, not a paraphrase of it. */
+.proof-jump {
+  margin-left: 4px; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-strong, var(--accent));
+  font: inherit; font-size: .78rem; font-weight: 640; cursor: pointer;
+}
+.proof-jump:hover { background: var(--accent); color: var(--accent-text, var(--surface)); }
+.proof-record {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 16px;
+  margin: 10px 0 0; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 10px; background: var(--bg);
+}
+.proof-record dt { font-size: .66rem; font-weight: 680; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+.proof-record dd { margin: 2px 0 0; font-size: .82rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.timeline-step.is-flash { animation: proof-flash 1.8s ease-out 1; }
+@keyframes proof-flash {
+  0% { box-shadow: 0 0 0 4px var(--accent-soft); background: var(--accent-soft); }
+  100% { box-shadow: none; background: var(--bg); }
+}

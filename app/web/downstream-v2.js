@@ -512,7 +512,7 @@ function stepMarkup(entry, index, started) {
   const offset = started && !Number.isNaN(at) ? ((at - started) / 1000).toFixed(1) + "s" : "";
   const why = STEP_WHY[entry.step];
   return (
-    '<li class="timeline-step ' + entry.actor + '">' +
+    '<li class="timeline-step ' + entry.actor + '" data-step="' + text(entry.step) + '">' +
     '<span class="step-n">' + (index + 1) + "</span>" +
     "<b>" + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
     '<span class="step-at">' + text(offset) + "</span>" +
@@ -832,6 +832,7 @@ async function armLiveProof() {
           const refreshed = await api("/downstream/workspaces/" + armed.workspace_id);
           state.workspace = refreshed;
           renderAutonomy(refreshed);
+          showProofRecord(line, armed, status);
           button.disabled = false;
           return;
         }
@@ -895,10 +896,54 @@ function resetDemo() {
   const proofLine = $("#live-proof-status");
   proofLine.className = "small muted";
   proofLine.textContent = "Not armed.";
+  const record = $("#proof-record");
+  if (record) record.remove();
   $("#arm-live-proof").disabled = false;
 
   updatePersistentControls();
   setStatus("Cleared. The service is still warm, so the next run will not pay a cold start.", "neutral");
+}
+
+// The fired line used to be the end of the proof: a sentence to take on trust or not, with
+// nothing to click. It now links to the step the scheduler actually wrote into the timeline, and
+// the job record sits under it -- wake id, armed, due, fired, revision -- so the claim is
+// checkable on the page rather than asserted by it.
+function showProofRecord(line, armed, status) {
+  const jump = document.createElement("button");
+  jump.type = "button";
+  jump.className = "proof-jump";
+  jump.id = "proof-jump";
+  jump.textContent = "See the step it wrote";
+  jump.addEventListener("click", () => {
+    const wrap = $("#autonomy-timeline-wrap");
+    if (wrap && !wrap.open) wrap.open = true;
+    const target = [...document.querySelectorAll(
+      '#autonomy-timeline .timeline-step[data-step="unattended_review_ran"]'
+    )].pop();
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.remove("is-flash");
+    void target.offsetWidth;
+    target.classList.add("is-flash");
+  });
+  line.append(" ", jump);
+
+  let record = $("#proof-record");
+  if (!record) {
+    record = document.createElement("dl");
+    record.id = "proof-record";
+    record.className = "proof-record";
+    line.insertAdjacentElement("afterend", record);
+  }
+  const when = (iso) => (iso ? new Date(iso).toLocaleTimeString() : "\u2014");
+  record.innerHTML = [
+    ["Wake id", status.wake_id || armed.wake_id],
+    ["Armed", when(status.armed_at || armed.armed_at)],
+    ["Due", when(status.due_at || armed.due_at)],
+    ["Fired", when(status.fired_at)],
+    ["Waited", status.waited_seconds != null ? status.waited_seconds + " s" : "\u2014"],
+    ["Ran on", status.revision || "unknown"],
+  ].map(([k, v]) => "<div><dt>" + text(k) + "</dt><dd>" + text(v) + "</dd></div>").join("");
 }
 
 $("#arm-live-proof").addEventListener("click", armLiveProof);
