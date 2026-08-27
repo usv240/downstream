@@ -1,7 +1,7 @@
 /* Downstream developer console.
  *
  * The page does three things: mint a key, run any endpoint against the live service, and document
- * the contract. The response is shown four ways on purpose — a formatted summary for reading, raw
+ * the contract. The response is shown four ways on purpose: a formatted summary for reading, raw
  * JSON for copying, the headers so the rate-limit budget is visible, and the equivalent curl so
  * anything done here can be reproduced in a terminal.
  *
@@ -256,7 +256,7 @@
 
     if (body.api_key) {
       blocks.push('<div class="fmt-grid">' + tile("Tenant", body.tenant_id) + tile("Key id", body.key_id) +
-        tile("Expires", new Date(body.expires_at).toLocaleString()) + tile("Keys left today", body.keys_remaining_today ?? "—") + "</div>");
+        tile("Expires", new Date(body.expires_at).toLocaleString()) + tile("Keys left today", body.keys_remaining_today ?? "not reported") + "</div>");
     }
     if (body.workspace_id) blocks.push('<div class="fmt-grid">' + tile("Workspace", body.workspace_id) + "</div>");
     if (body.dam) {
@@ -308,7 +308,7 @@
     }
     if (body.request_path) {
       blocks.push("<h4>Request path</h4><ul class=\"fmt-list\">" + body.request_path.map((r) =>
-        '<li class="' + (r.active ? "ok" : "") + '"><b>' + (r.active ? "ACTIVE" : "OFF") + "</b><span>" + esc(r.service) + " &mdash; " + esc(r.detail) + "</span></li>").join("") + "</ul>");
+        '<li class="' + (r.active ? "ok" : "") + '"><b>' + (r.active ? "ACTIVE" : "OFF") + "</b><span>" + esc(r.service) + ": " + esc(r.detail) + "</span></li>").join("") + "</ul>");
     }
     if (body.revoked) blocks.push('<div class="fmt-tile"><small>Revoked</small><b>' + esc(body.key_id) + "</b></div>");
 
@@ -360,7 +360,7 @@
     $("#headers-output").textContent = headers.sort().join("\n") || "(none exposed to the browser)";
     $("#curl-output").textContent = curlFor(endpoint).replace(resolvedPath(endpoint), path);
     const ok = response.ok;
-    $("#response-status").textContent = endpoint.method + " " + path + " → " + response.status + " " + response.statusText;
+    $("#response-status").textContent = endpoint.method + " " + path + " returned " + response.status + " " + response.statusText;
     $("#response-status").className = "response-status " + (ok ? "ok" : "bad");
     const remaining = response.headers.get("X-RateLimit-Remaining");
     $("#response-timing").textContent = elapsed + " ms" + (remaining ? " · " + remaining + " left today" : "");
@@ -401,11 +401,11 @@
     try {
       const find = await fetch("/downstream/nid/search?limit=1&state=IA").then((r) => r.json());
       const nid = find.records[0].NIDID;
-      step("Found a live public record", true, nid + " — " + find.records[0].NAME);
+      step("Found a live public record", true, nid + ", " + find.records[0].NAME);
 
       let r = await send(ENDPOINTS.find((e) => e.id === "create_workspace"), {path: "/v1/workspaces", body: {nid_id: nid}});
       const ws = r.parsed;
-      step("POST /v1/workspaces", r.response.ok, r.response.status + " → " + (ws.workspace_id || ws.detail));
+      step("POST /v1/workspaces", r.response.ok, r.response.status + ", " + (ws.workspace_id || ws.detail));
       if (!r.response.ok) throw new Error(ws.detail || "workspace creation failed");
       const id = ws.workspace_id;
       const qid = ws.next_question.id;
@@ -512,7 +512,7 @@
       $("#api-key").value = body.api_key;
       $("#key-tenant").textContent = body.tenant_id;
       $("#key-expires").textContent = new Date(body.expires_at).toLocaleString();
-      $("#key-remaining").textContent = body.keys_remaining_today ?? "—";
+      $("#key-remaining").textContent = body.keys_remaining_today ?? "not reported";
       $("#key-result").hidden = false;
       $("#invitation-code").value = "";
       setStatus("#developer-status", "Key created and loaded into this page. Save it now: it is shown once.", "success");

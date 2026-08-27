@@ -385,7 +385,7 @@ function renderProfile(workspace) {
   }
   const vocabulary = Object.entries(profile.vocabulary || {});
   if (vocabulary.length) {
-    learned.push(["Vocabulary", vocabulary.map(([formal, preferred]) => formal + " → " + preferred).join(", ")]);
+    learned.push(["Vocabulary", vocabulary.map(([formal, preferred]) => formal + " to " + preferred).join(", ")]);
   }
 
   const tiles = learned.concat([
