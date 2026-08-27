@@ -88,11 +88,9 @@
 <rect x="1236" y="504" width="372" height="62" rx="10" fill="#ffffff" stroke="#c7d3df" stroke-width="1.5"/>
 <text x="1422.0" y="530.0" text-anchor="middle" font-size="16" font-weight="650" fill="#16222e">Cloud Trace</text>
 <text x="1422.0" y="550.0" text-anchor="middle" font-size="13" fill="#5d6f80">OpenTelemetry spans for every run</text>
-<rect x="1236" y="580" width="372" height="100" rx="10" fill="#fdf1de" stroke="#9a5b00" stroke-width="1.5"/>
-<text x="1422.0" y="614" text-anchor="middle" font-size="16" font-weight="650" fill="#9a5b00">Fail-closed by design</text>
-<text x="1422.0" y="638" text-anchor="middle" font-size="13" fill="#5d6f80">A gate that cannot prove its</text>
-<text x="1422.0" y="657" text-anchor="middle" font-size="13" fill="#5d6f80">conditions stops, and says who</text>
-<text x="1422.0" y="676" text-anchor="middle" font-size="13" fill="#5d6f80">decides instead.</text>
+<text x="1252" y="600" font-size="13.5" fill="#5d6f80">The amber boxes are gates. A gate that</text>
+<text x="1252" y="620" font-size="13.5" fill="#5d6f80">cannot prove its conditions stops, and</text>
+<text x="1252" y="640" font-size="13.5" fill="#5d6f80">says who decides instead.</text>
 <rect x="50" y="736" width="1140" height="226" rx="14" fill="#f4f7fa" stroke="#c7d3df" stroke-width="1.5" stroke-dasharray="7 5"/>
 <text x="68" y="763" font-size="14" font-weight="700" letter-spacing="0.8" fill="#2b5c8a">FIRESTORE  ·  STATE THAT OUTLIVES THE BROWSER TAB</text>
 <rect x="72" y="782" width="258" height="62" rx="10" fill="#ffffff" stroke="#c7d3df" stroke-width="1.5"/>

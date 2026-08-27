@@ -125,10 +125,8 @@ box(SX, 276, SW, 62, "Vertex AI", "Gemini 3.5 Flash, live (recording past the ca
 box(SX, 352, SW, 62, "Vertex AI", "Gemma 4 reviews name spans (replayed)", stroke=GREEN, fill=GREEN_BG, tc=GREEN)
 box(SX, 428, SW, 62, "Secret Manager", "scheduler token, key digests, pepper")
 box(SX, 504, SW, 62, "Cloud Trace", "OpenTelemetry spans for every run")
-a(f'<rect x="{SX}" y="580" width="{SW}" height="100" rx="10" fill="{AMBER_BG}" stroke="{AMBER}" stroke-width="1.5"/>')
-a(f'<text x="{SX + SW/2}" y="614" text-anchor="middle" font-size="16" font-weight="650" fill="{AMBER}">Fail-closed by design</text>')
-for i, line in enumerate(["A gate that cannot prove its", "conditions stops, and says who", "decides instead."]):
-    a(f'<text x="{SX + SW/2}" y="{638 + i*19}" text-anchor="middle" font-size="13" fill="{MUTED}">{line}</text>')
+for i, line in enumerate(["The amber boxes are gates. A gate that", "cannot prove its conditions stops, and", "says who decides instead."]):
+    a(f'<text x="{SX + 16}" y="{600 + i*20}" font-size="13.5" fill="{MUTED}">{line}</text>')
 
 # ---------------------------------------------------------------- state
 lane(50, 736, 1140, 226, "Firestore  ·  state that outlives the browser tab")
