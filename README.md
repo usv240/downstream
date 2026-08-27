@@ -32,17 +32,17 @@ it. Close the tab and it still happens.
 
 ```mermaid
 flowchart TD
-    T["<b>An event starts the run, never a button</b><br>the public console, an API client, or Cloud Scheduler"]
-    T --> A["Resolve the dam record. Read the 1958 drawing with<br><b>Gemini 3.5 Flash on Vertex AI</b>. Keep a quote for every fact."]
+    T["An event starts the run, never a button<br>the public console, an API client, or Cloud Scheduler"]
+    T --> A["Resolve the dam record. Read the 1958 drawing with<br>Gemini 3.5 Flash on Vertex AI. Keep a quote for every fact."]
     A --> B{"Two sources disagree?"}
     B -->|"yes: 31 ft vs 28 ft"| C["Ask the owner one question,<br>with both values attached"]
     B -->|no| D
     C --> D["Compose every section it has evidence for"]
-    D --> E["<b>No flood map drawn</b><br>a qualified engineer decides"]
-    D --> F["<b>Stop at owner knowledge</b><br>the one input it may not invent"]
-    E --> G[("<b>Firestore</b><br>the draft, its versions, its follow-ups")]
+    D --> E["No flood map drawn<br>a qualified engineer decides"]
+    D --> F["Stop at owner knowledge<br>the one input it may not invent"]
+    E --> G[("Firestore<br>the draft, its versions, its follow-ups")]
     F --> G
-    G <--> H["<b>Cloud Scheduler</b> wakes it later<br>and re-checks: still complete? still true?"]
+    G <--> H["Cloud Scheduler wakes it later<br>and re-checks: still complete? still true?"]
 ```
 
 Four things follow from that shape.
