@@ -504,12 +504,22 @@ function highlightsMarkup(timeline) {
     .join("");
 }
 
+function offsetLabel(seconds) {
+  if (seconds < 60) return seconds.toFixed(1) + "s";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return "+" + minutes + "m " + Math.round(seconds % 60) + "s";
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days >= 1) return "+" + days + "d " + (hours % 24) + "h";
+  return "+" + hours + "h " + (minutes % 60) + "m";
+}
+
 function stepMarkup(entry, index, started) {
   // Elapsed since the trigger. The run takes about six seconds and a reader deserves to see
   // where each step fell inside it, rather than a flat list that could have been written by
   // hand afterwards.
   const at = Date.parse(entry.at);
-  const offset = started && !Number.isNaN(at) ? ((at - started) / 1000).toFixed(1) + "s" : "";
+  const offset = started && !Number.isNaN(at) ? offsetLabel((at - started) / 1000) : "";
   const why = STEP_WHY[entry.step];
   return (
     '<li class="timeline-step ' + entry.actor + '" data-step="' + text(entry.step) + '">' +
@@ -552,7 +562,8 @@ function renderAutonomy(workspace) {
       '<div class="profile-item"><small>' + text(label) + "</small><b>" + text(value) + "</b></div>")
     .join("");
   $("#autonomy-waiting").textContent =
-    "Trigger: " + proof.trigger.replaceAll("_", " ") + ". Now waiting on " + proof.waiting_on + ".";
+    "Trigger: " + proof.trigger.replaceAll("_", " ") + ". Now waiting on " +
+    String(proof.waiting_on).replaceAll("_", " ") + ".";
   const timeline = proof.timeline || [];
   const started = timeline.length ? Date.parse(timeline[0].at) : 0;
   $("#autonomy-timeline").innerHTML = timeline

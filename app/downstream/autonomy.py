@@ -415,7 +415,10 @@ def review_draft(workspace: dict[str, Any], since: str | None = None) -> dict[st
         f"sections ready for review"
     )
     if waiting:
-        opening += f", {len(waiting)} still waiting on the owner ({names(outstanding or waiting)})"
+        opening += f", {len(waiting)} still waiting on the owner"
+        if outstanding:
+            n = len(outstanding)
+            opening += f" \u2014 {n} open question{'s' if n != 1 else ''}: {names(outstanding)}"
     else:
         opening += ", none waiting on the owner"
     if qualified:
@@ -423,9 +426,9 @@ def review_draft(workspace: dict[str, Any], since: str | None = None) -> dict[st
     parts = [opening + "."]
     if conflicts:
         f = conflicts[0]
-        parts.append(
-            f"The height conflict is still open (drawing {f.get('value')}; {f.get('conflicts_with')})."
-        )
+        value = f.get("value")
+        shown = f"{value} ft" if isinstance(value, (int, float)) else value
+        parts.append(f"The height conflict is still open (drawing {shown}; {f.get('conflicts_with')}).")
     else:
         parts.append("No source conflict is open.")
     parts.append(

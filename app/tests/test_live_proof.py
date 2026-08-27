@@ -225,6 +225,10 @@ def test_the_unattended_review_reports_what_it_checked(api, runtime):
     assert step["step"] == "unattended_review_ran"
     assert "sections ready for review" in step["detail"]
     assert "flood map stays blocked" in step["detail"]
+    # The count and the list it introduces must describe the same thing: sections wait, questions
+    # are open. "4 waiting (a, b, c and 3 more)" was two different counts in one clause.
+    assert f"{len(workspace['outstanding'])} open questions" in step["detail"]
+    assert "drawing 31" in step["detail"], "the recorded read says 31 FT, the fixture says 31; both carry units"
     assert "Nothing was sent" in step["detail"]
     ev = step["evidence"]
     assert ev["sections_total"] == len(workspace["plan"])
