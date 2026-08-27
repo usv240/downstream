@@ -324,18 +324,21 @@ def advance_on_wake(
                 )
             except ValueError:
                 waited = None
+        # A wake that only wrote "reviewed the draft" proved the scheduler ran and nothing else;
+        # a reader who clicked through to it found a note. This is the review a maintainer would
+        # want on a schedule -- is the plan still complete, and still true? -- with every count it
+        # states carried as evidence so the line can be checked against the workspace.
+        review = review_draft(workspace, since=armed_at)
         record_step(
             workspace,
             AGENT,
             "unattended_review_ran",
-            (
-                "Reviewed the draft on the wall clock, with nobody watching. Nothing was sent to "
-                "any person or agency."
-            ),
+            review["detail"],
             wake_id=workspace.get("_live_proof_wake_id"),
             revision=workspace.get("_live_proof_revision"),
             waited_seconds=waited,
             outstanding=workspace.get("outstanding", []),
+            **review["evidence"],
         )
     else:
         raise ValueError(f"unknown wake kind {kind}")
@@ -371,4 +374,79 @@ def autonomy_proof(workspace: dict[str, Any]) -> dict[str, Any]:
         "system_decisions_over_reserved_authority": 0,
         "synthetic_demonstration": bool(workspace.get("dam", {}).get("synthetic")),
         "timeline": timeline,
+    }
+
+
+def review_draft(workspace: dict[str, Any], since: str | None = None) -> dict[str, Any]:
+    """Check the draft the way a maintainer would on a schedule: complete, and still true?
+
+    Reads only what the workspace already holds. Returns a plain-language detail line and the
+    evidence behind every number in it. Nothing here contacts anyone.
+    """
+    plan = workspace.get("plan", [])
+    ready = [s["key"] for s in plan if s.get("status") == "ready_for_review"]
+    waiting = [s["key"] for s in plan if s.get("status") == "needs_owner_fact"]
+    qualified = [s["key"] for s in plan if s.get("status") == "needs_qualified_confirmation"]
+    outstanding = list(workspace.get("outstanding", []))
+    conflicts = [
+        f for f in workspace.get("facts", [])
+        if f.get("conflicts_with") and f.get("status") == "conflict"
+    ]
+    mapping_blocked = workspace.get("mapping", {}).get("may_render_extent") is not True
+
+    arrived = 0
+    if since:
+        try:
+            since_ts = datetime.fromisoformat(since).timestamp()
+            arrived = sum(
+                1 for a in workspace.get("answers", {}).values()
+                if a.get("recorded_at") and datetime.fromisoformat(a["recorded_at"]).timestamp() > since_ts
+            )
+        except ValueError:
+            arrived = 0
+
+    def names(ids: list[str]) -> str:
+        shown = [i.replace("_", " ") for i in ids[:3]]
+        more = len(ids) - len(shown)
+        return ", ".join(shown) + (f" and {more} more" if more > 0 else "")
+
+    opening = (
+        f"Checked the draft on schedule, with nobody watching: {len(ready)} of {len(plan)} "
+        f"sections ready for review"
+    )
+    if waiting:
+        opening += f", {len(waiting)} still waiting on the owner ({names(outstanding or waiting)})"
+    else:
+        opening += ", none waiting on the owner"
+    if qualified:
+        opening += f", {len(qualified)} waiting on a qualified engineer"
+    parts = [opening + "."]
+    if conflicts:
+        f = conflicts[0]
+        parts.append(
+            f"The height conflict is still open (drawing {f.get('value')}; {f.get('conflicts_with')})."
+        )
+    else:
+        parts.append("No source conflict is open.")
+    parts.append(
+        "The flood map stays blocked." if mapping_blocked else "The mapping gate is no longer blocking."
+    )
+    if since:
+        parts.append(
+            f"{arrived} owner fact{'s' if arrived != 1 else ''} arrived since the reminder was armed."
+        )
+    parts.append("Nothing was sent to any person or agency.")
+
+    return {
+        "detail": " ".join(parts),
+        "evidence": {
+            "sections_ready": len(ready),
+            "sections_total": len(plan),
+            "sections_waiting": len(waiting),
+            "sections_awaiting_qualified_review": len(qualified),
+            "waiting_on": outstanding,
+            "conflict_open": bool(conflicts),
+            "mapping_blocked": mapping_blocked,
+            "answers_since_armed": arrived,
+        },
     }

@@ -212,3 +212,23 @@ def test_the_fired_status_carries_the_job_record() -> None:
     assert body["fired"] is True
     assert (body["wake_id"], body["armed_at"], body["due_at"]) == ("wk_1", armed["armed_at"], armed["due_at"])
     assert body["revision"] == "downstream-00056-d5b"
+
+
+def test_the_unattended_review_reports_what_it_checked(api, runtime):
+    """The step used to say "reviewed the draft" and nothing more. It states what it found now,
+    and every number in the sentence is carried as evidence a reader can check."""
+    workspace_id, _ = arm(api)
+    move_clock_forward(runtime, 60)
+    api.post("/internal/scan-due", headers={"X-Scheduler-Token": TOKEN})
+    workspace = api.get(f"/downstream/workspaces/{workspace_id}").json()
+    step = workspace["timeline"][-1]
+    assert step["step"] == "unattended_review_ran"
+    assert "sections ready for review" in step["detail"]
+    assert "flood map stays blocked" in step["detail"]
+    assert "Nothing was sent" in step["detail"]
+    ev = step["evidence"]
+    assert ev["sections_total"] == len(workspace["plan"])
+    assert ev["sections_ready"] == sum(1 for s in workspace["plan"] if s["status"] == "ready_for_review")
+    assert ev["mapping_blocked"] is True
+    assert ev["conflict_open"] is True, "the 28-vs-31 conflict is unresolved in a fresh workspace"
+    assert set(ev["waiting_on"]) == set(workspace["outstanding"])
