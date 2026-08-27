@@ -324,6 +324,24 @@ def test_a_bare_home_url_always_opens_at_the_top():
         assert '<a class="brand" href="/"' in (WEB / page).read_text(encoding="utf-8"), page
 
 
+def test_the_collapsed_receipt_says_what_ran_not_just_what_ran_last():
+    """Collapsed, the receipt headlined step 23 -- a follow-up note -- as its account of the run.
+
+    The decisions are what a reader needs: the drawing read, the disagreement, the refusal, the
+    stop at owner knowledge. Those lead now, coloured by who made them, above the newest step.
+    """
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    html = (WEB / "downstream.html").read_text(encoding="utf-8")
+    assert 'id="autonomy-highlights"' in html
+    block = js[js.index("const HIGHLIGHT_STEPS"):js.index("function highlightsMarkup")]
+    for step in ("drawing_read", "source_conflict_detected", "mapping_gate_applied", "paused_for_reserved_authority"):
+        assert f'"{step}"' in block, step
+    sync = js[js.index("function syncRunLog"):js.index("function renderAutonomy")]
+    assert "#autonomy-highlights" in sync, "highlights must hide when the full log opens"
+    reset = js[js.index("function resetDemo"):js.index('$("#arm-live-proof").addEventListener')]
+    assert "#autonomy-highlights" in reset
+
+
 def test_start_over_clears_the_counts_it_is_clearing_the_run_for():
     """Leaving 15 automatic steps on a cleared console would be a count for a run that is gone."""
     js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")

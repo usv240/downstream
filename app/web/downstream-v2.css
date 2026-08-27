@@ -706,3 +706,44 @@
 }
 .learned #learned-note { margin: 0 0 10px; }
 .learned .profile-grid { margin: 0; }
+
+/* ---------------------------------------------------------------- who did each step
+   The actor was a 3px stripe down the left edge, and the demo asks a judge to read the actors off
+   the list as it scrolls. A stripe that thin does not survive a screen recording. The actor label
+   and the step number now carry the colour themselves: green for the agent, amber where a person
+   decided, grey for an external event. */
+.timeline-step b {
+  display: inline-flex; align-items: center; align-self: center;
+  padding: 3px 8px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-muted);
+}
+.timeline-step.agent b,
+.timeline-step.agent .step-n {
+  background: var(--accent-soft); color: var(--accent-strong, var(--accent));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+.timeline-step.human_authority b,
+.timeline-step.human_authority .step-n {
+  background: var(--warn-soft); color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
+}
+.timeline-step.external_evidence .step-n {
+  background: var(--surface); color: var(--text-muted); border-color: var(--border-strong);
+}
+.timeline-step.agent { border-left-width: 4px; }
+.timeline-step.human_authority { border-left-width: 4px; }
+
+/* What ran, at a glance. The decisions of the run as coloured chips, so a collapsed receipt says
+   more than "the last thing it did was write a note". */
+.highlights { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.highlight {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px 5px 5px;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: .82rem;
+}
+.highlight b {
+  padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border);
+  font-size: .6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted);
+}
+.highlight.agent b { background: var(--accent-soft); color: var(--accent-strong, var(--accent)); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.highlight.human_authority b { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--border)); }
+.run-log-eyebrow-latest { margin-top: 2px; }

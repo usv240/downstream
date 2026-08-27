@@ -211,7 +211,7 @@ The last one runs against a URL, so it works equally against the deployed servic
 python scripts/downstream_demo_flow.py --url https://downstream-109051079423.us-central1.run.app
 ```
 
-Current verified result: **367 tests**, accessibility green in both themes, and **63/63** demo
+Current verified result: **368 tests**, accessibility green in both themes, and **63/63** demo
 checks. Full evidence, including what is deliberately switched off in the deployed configuration,
 is in [VALIDATION_EVIDENCE.md](VALIDATION_EVIDENCE.md).
 

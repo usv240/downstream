@@ -477,6 +477,33 @@ const STEP_WHY = {
     "This one fired on the wall clock with no browser open. It is the step that cannot be faked by a page you are looking at.",
 };
 
+// The steps a reader needs to see to know what ran. Collapsed, the receipt headlined only the
+// newest step, which is the least interesting of the twenty-three: a follow-up note. These are the
+// decisions -- the drawing read, the disagreement, the refusal, the stop -- in the order they
+// happened, each coloured by who made it.
+const HIGHLIGHT_STEPS = [
+  "drawing_read",
+  "untrusted_spans_quarantined",
+  "source_conflict_detected",
+  "mapping_gate_applied",
+  "durable_wakes_registered",
+  "paused_for_reserved_authority",
+  "owner_correction_applied",
+  "unattended_review_ran",
+];
+
+function highlightsMarkup(timeline) {
+  const seen = new Set();
+  return timeline
+    .filter((entry) => HIGHLIGHT_STEPS.includes(entry.step) && !seen.has(entry.step) && seen.add(entry.step))
+    .map((entry) => {
+      const timing = entry.step === "drawing_read" ? (String(entry.detail || "").match(/in ([\d.]+s)/) || [])[1] : null;
+      return '<li class="highlight ' + entry.actor + '"><b>' + text(STEP_LABELS[entry.actor] || entry.actor) + "</b>" +
+        "<span>" + text(STEP_TITLES[entry.step] || entry.step.replaceAll("_", " ")) + (timing ? " · " + text(timing) : "") + "</span></li>";
+    })
+    .join("");
+}
+
 function stepMarkup(entry, index, started) {
   // Elapsed since the trigger. The run takes about six seconds and a reader deserves to see
   // where each step fell inside it, rather than a flat list that could have been written by
@@ -505,10 +532,10 @@ function syncRunLog(wrap, count) {
   wrap.querySelector("summary").textContent = open
     ? "Hide the earlier steps"
     : "View all " + count + " steps, in the order they happened";
-  const latest = $("#autonomy-latest");
-  if (latest) latest.hidden = open;
-  const eyebrow = $("#run-log-eyebrow");
-  if (eyebrow) eyebrow.hidden = open;
+  ["#autonomy-latest", "#run-log-eyebrow", "#autonomy-highlights", "#run-log-latest-label"].forEach((s) => {
+    const node = $(s);
+    if (node) node.hidden = open;
+  });
 }
 
 function renderAutonomy(workspace) {
@@ -532,6 +559,7 @@ function renderAutonomy(workspace) {
     .map((entry, index) => stepMarkup(entry, index, started))
     .join("");
   const last = timeline.length - 1;
+  $("#autonomy-highlights").innerHTML = highlightsMarkup(timeline);
   $("#autonomy-latest").innerHTML = last >= 0 ? stepMarkup(timeline[last], last, started) : "";
   const wrap = $("#autonomy-timeline-wrap");
   if (wrap && timeline.length) {
@@ -850,6 +878,7 @@ function resetDemo() {
     delete wrap.dataset.count;
   }
   $("#autonomy-timeline").innerHTML = "";
+  $("#autonomy-highlights").innerHTML = "";
   $("#autonomy-latest").innerHTML = "";
   const plan = $("#run-plan");
   if (plan) plan.hidden = true;
