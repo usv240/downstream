@@ -82,8 +82,9 @@ evidence page, and the developer console.
 
 ## Architecture
 
-See [`docs/architecture.mmd`](docs/architecture.mmd) for the source and
-[`docs/architecture.svg`](docs/architecture.svg) for a rendered copy.
+The diagram is generated, not drawn: [`docs/architecture.py`](docs/architecture.py) emits
+[`docs/architecture.svg`](docs/architecture.svg) with every box placed by hand, because auto-layout
+routed edges across the whole canvas. Run it with `python docs/architecture.py`.
 
 ![Downstream architecture](docs/architecture.png)
 
