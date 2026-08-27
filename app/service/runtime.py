@@ -99,6 +99,15 @@ class Runtime:
                     ),
                 },
                 {
+                    "service": "Cloud Scheduler",
+                    "active": bool(os.environ.get("INTERNAL_SCHEDULER_TOKEN", "").strip()),
+                    "detail": (
+                        "Wakes the service on a schedule; the scan-due route accepts only its token."
+                        if os.environ.get("INTERNAL_SCHEDULER_TOKEN", "").strip()
+                        else "No scheduler token configured; due wakes run only when someone visits."
+                    ),
+                },
+                {
                     "service": "Cloud Trace",
                     "active": self.tracing_active,
                     "detail": (

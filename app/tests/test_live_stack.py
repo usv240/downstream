@@ -40,6 +40,7 @@ def test_the_badge_hardcodes_no_service_names_at_all() -> None:
         "Gemini",
         "Cloud Run",
         "Firestore",
+        "Cloud Scheduler",
         "Cloud Trace",
         "Secret Manager",
         "Gemma",
@@ -114,3 +115,17 @@ def test_the_report_publishes_the_same_limits_the_service_enforces() -> None:
 
 def test_cloud_run_is_the_one_thing_that_is_always_true() -> None:
     assert entry(stack(), "Cloud Run")["active"] is True
+
+
+def test_the_badge_reports_cloud_scheduler_only_when_a_token_is_configured(monkeypatch) -> None:
+    """The demo narration says Cloud Scheduler wakes the service. The badge said nothing about it.
+
+    Like every other row, this one is derived: the scan-due route accepts only the scheduler's
+    token, so a configured token is the process's own evidence that a scheduler is wired to it.
+    """
+    from service.runtime import local_runtime
+
+    monkeypatch.delenv("INTERNAL_SCHEDULER_TOKEN", raising=False)
+    assert entry(local_runtime().stack(), "Cloud Scheduler")["active"] is False
+    monkeypatch.setenv("INTERNAL_SCHEDULER_TOKEN", "shared-secret")
+    assert entry(local_runtime().stack(), "Cloud Scheduler")["active"] is True

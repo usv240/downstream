@@ -311,6 +311,19 @@ def test_the_correction_card_stays_on_the_answer_it_just_revised():
     assert "state.lastRevised = null" in reset, "a cleared console must not hold a dead selection"
 
 
+def test_a_bare_home_url_always_opens_at_the_top():
+    """The brand links to "/", and the console lives on "/", so the brand is often a link to the
+    page you are already on. A browser that treats that as a reload restores the old scroll
+    position, and the front door opens halfway down the page."""
+    js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")
+    boot = js[js.index("initTheme();"):]
+    assert 'history.scrollRestoration = "manual"' in boot
+    assert "window.scrollTo(0, 0)" in boot
+    assert "!window.location.hash" in boot, "an explicit anchor must still be honoured"
+    for page in ("downstream.html", "developer.html", "downstream-judges-v2.html", "downstream-evidence.html"):
+        assert '<a class="brand" href="/"' in (WEB / page).read_text(encoding="utf-8"), page
+
+
 def test_start_over_clears_the_counts_it_is_clearing_the_run_for():
     """Leaving 15 automatic steps on a cleared console would be a count for a run that is gone."""
     js = (WEB / "downstream-v2.js").read_text(encoding="utf-8")

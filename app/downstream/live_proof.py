@@ -23,7 +23,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-LEAD_SECONDS = 20
+# Five, not twenty. The scheduler polls every minute, so arm-to-fire is this lead plus up to a
+# minute plus a few seconds of scan latency. At twenty the worst case was ~82s, measured on
+# 2026-08-26 with the demo's reveal at ~74s after arming; at five it is ~67s.
+LEAD_SECONDS = 5
 WAKE_KIND = "unattended_draft_review"
 COLLECTION = "downstream_live_proof"
 

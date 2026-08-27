@@ -902,4 +902,13 @@ if (requestedWorkspace) {
   start();
 } else {
   setStatus("");
+  // A bare "/" is the front door and opens at the top, unconditionally. The console lives on the
+  // home page, so the brand link is often a link to the page you are already on -- and a browser
+  // that classifies that as a reload will restore the old scroll position, which reads as "it
+  // just refreshed" rather than "it took me home". With no workspace to restore and no anchor to
+  // honour, there is nothing to preserve, so restoration is switched off before it can run.
+  if (!window.location.hash) {
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
+  }
 }
